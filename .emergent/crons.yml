@@ -1,0 +1,16 @@
+crons:
+  - name: weekly-digest
+    description: "Emails parents a weekly summary of their child's practice and scores, Monday 8am IST"
+    cron: "0 8 * * 1"
+    timezone: "Asia/Kolkata"
+    endpoint: "{{BASE_URL}}/api/cron/weekly-digest"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true
+  - name: study-reminder
+    description: "Hourly check that nudges students at their chosen time to keep their streak alive"
+    cron: "30 * * * *"
+    endpoint: "{{BASE_URL}}/api/cron/study-reminder"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true

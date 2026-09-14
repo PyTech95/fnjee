@@ -1,0 +1,26 @@
+{
+  "short_name": "MockTestClub",
+  "name": "Abhyash Mantra — CBT Tests for JEE, NEET & More",
+  "description": "AI-powered CBT mock tests, doubt-solver and rank predictor for JEE, NEET, Olympiads and competitive exams.",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "theme_color": "#FF3B30",
+  "background_color": "#FAF7F2",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    { "name": "AI Doubt Solver", "short_name": "AI Tutor", "url": "/student/ai-tutor", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Notes to Quiz", "short_name": "Notes Quiz", "url": "/student/notes-quiz", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My Tests", "short_name": "Tests", "url": "/student/tests", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

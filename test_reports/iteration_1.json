@@ -1,0 +1,39 @@
+{
+  "summary": "Full backend + frontend smoke test of ported Mock Test Club app on preview URL. 17/18 pytest cases passed (1 stale-data test failure not a production bug). Rate limiting, server-side scoring, answer-key hiding, idempotent double-submit, server-side timer, RBAC, role login, and health endpoint all verified working. Frontend login → student dashboard works.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/attempts/start", "issue": "When a student already submitted an attempt for a test (without retake pass), start returns the previously-submitted attempt object (status='submitted'). This is by design (one-attempt lock) but can confuse a client that assumes start returns an in-progress attempt. Frontend appears to handle it, but consider returning 409/status hint so clients don't call /attempts/submit on a submitted id (which no-ops)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Student dashboard (initial load)", "issues": ["Recharts warnings: 'width(-1) and height(-1) of chart should be greater than 0' logged twice on first render — chart container mounts before layout width available. Not user-visible but noisy console."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_security_and_critical_path.py",
+    "/app/backend/tests/test_idempotent_submit.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: In /api/attempts/start, when returning an already-submitted attempt, either raise 409 or add a flag (e.g. 'already_submitted': true) so client can navigate to result screen rather than fetch/submit path.",
+    "OPTIONAL: Silence Recharts width=-1 warning by giving chart container an explicit min-height or gating render on layout ready."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 3208 lines — well past the 700-line guideline. Split by domain (auth, attempts, tests, questions, ai, live, rewards, etc.) into routers before adding more features.",
+    "Rate limiter uses request.headers['x-forwarded-for'] first hop as key. On a Kubernetes ingress that fronts through multiple internal proxies this can be spoofable and/or share buckets across users behind NAT. Confirmed working end-to-end (15/16 rapid logins got 429), but consider anchoring per-user for authenticated endpoints and layering an ingress-level WAF for login.",
+    "submit_attempt catches every Exception silently around ends_at/started_at parsing (line 647-656). If parsing fails, time_taken_seconds stays None and late_submission stays False — a client could feed malformed timestamps via manual DB tamper only, so low-risk, but log at warning level instead of pass.",
+    "Post-submit fire-and-forget: asyncio.create_task(...) is spawned inside a broad try/except that logs failures but never awaits. Consider a task registry / structured logging so silent AI/email failures are observable."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "94%", "frontend": "100%"},
+  "test_credentials": "admin@examnest.io/Admin@123/admin, student1@examnest.io/Student@123/student, teacher1@examnest.io/Teacher@123/teacher, parent1@examnest.io/Parent@123/parent (all confirmed working)",
+  "seed_data_creation": "Startup seed is idempotent and populated. Test suite creates TEST_ prefixed questions/tests and cleans them up in teardown.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Rate limit at login is 10/60s per client-IP; when running pytest for auth-heavy tests, use -p no:xdist or add sleeps between login-heavy modules to avoid false 429s. The one failing pytest case (TestStudentCriticalPath::test_student_full_flow expecting 'time_taken_seconds' in submit response) is stale-data — student1 already has a submitted attempt so /attempts/start returns the old attempt lacking that field. Reset the DB or use a fresh student email to make it green. Verified WORKING: /api/health, all 4 role logins, wrong-role/wrong-password 401, /api/questions admin-only (students/parents 403), student view of /api/tests/{id}?include_questions=true has NO 'correct' pre- or post-submit and NO 'explanation' pre-submit, admin retains 'correct', full student take-test E2E, idempotent double-submit (score unchanged), server-side score+timer fields, RBAC on question create/test delete, attempts scoped to self even with user_id override, admin create question+test, rate limit 429 at 11th request/min on login.",
+  "rca of the issue": "N/A — no blocking bugs found. Minor stale-test-data pytest failure documented above."
+}
