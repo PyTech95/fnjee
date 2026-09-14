@@ -231,7 +231,7 @@ async def run_seed(db):
 
     # announcement
     await db.announcements.insert_one({
-        "id": _id(), "title": "Welcome to Abhyash Mantra!", "audience": "all",
+        "id": _id(), "title": "Welcome to FNJEE.com!", "audience": "all",
         "body": "Start your JEE/NEET prep with mock tests, question bank, and parent portal.",
         "created_at": now, "created_by": admin_id,
     })

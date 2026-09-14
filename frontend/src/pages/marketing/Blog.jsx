@@ -10,13 +10,13 @@ const ORIGIN = "https://exam-builder-hub.emergent.host";
 
 export function BlogIndex() {
   useSEO({
-    title: "Abhyash Mantra Blog — Strategy, chapter-wise tips & exam hacks",
+    title: "FNJEE.com Blog — Strategy, chapter-wise tips & exam hacks",
     description: "Read expert strategy pieces for JEE, NEET, Olympiads and govt exams — daily practice systems, chapter-wise revision plans, mock-test schedules, and rank-boosting tactics.",
     canonical: `${ORIGIN}/blog`,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "Blog",
-      "name": "Abhyash Mantra Blog",
+      "name": "FNJEE.com Blog",
       "url": `${ORIGIN}/blog`,
       "blogPost": BLOG_POSTS.map(p => ({
         "@type": "BlogPosting",
@@ -59,7 +59,7 @@ export function BlogPost() {
   const post = BLOG_POSTS.find(p => p.slug === slug);
 
   useSEO({
-    title: post ? `${post.title} · Abhyash Mantra` : "Abhyash Mantra",
+    title: post ? `${post.title} · FNJEE.com` : "FNJEE.com",
     description: post?.excerpt,
     canonical: post ? `${ORIGIN}/blog/${post.slug}` : undefined,
     jsonLd: post ? {
@@ -68,8 +68,8 @@ export function BlogPost() {
       "headline": post.title,
       "description": post.excerpt,
       "datePublished": post.date,
-      "author": { "@type": "Organization", "name": "Abhyash Mantra" },
-      "publisher": { "@type": "Organization", "name": "Abhyash Mantra" },
+      "author": { "@type": "Organization", "name": "FNJEE.com" },
+      "publisher": { "@type": "Organization", "name": "FNJEE.com" },
       "mainEntityOfPage": `${ORIGIN}/blog/${post.slug}`,
     } : undefined,
   });
@@ -98,7 +98,7 @@ export function BlogPost() {
       </div>
       <div className="mt-12 p-6 rounded-2xl bg-primary text-primary-foreground">
         <div className="font-display font-semibold text-lg">Ready to put this into practice?</div>
-        <p className="text-sm text-primary-foreground/80 mt-1">Sign up on Abhyash Mantra and take your first mock free.</p>
+        <p className="text-sm text-primary-foreground/80 mt-1">Sign up on FNJEE.com and take your first mock free.</p>
         <Link to="/signup"><Button variant="secondary" className="rounded-full mt-4">Start free mock</Button></Link>
       </div>
     </article>

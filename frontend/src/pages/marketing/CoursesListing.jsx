@@ -10,7 +10,7 @@ import { Star, Users, CheckCircle2, ShieldCheck, Sparkles, TrendingUp } from "lu
 
 export default function CoursesListing() {
   useSEO({
-    title: "NEET Courses — Target, Masterclass, Test Series · Abhyash Mantra",
+    title: "NEET Courses — Target, Masterclass, Test Series · FNJEE.com",
     description: "1-year and 2-year NEET preparation courses with question banks, recorded lectures, DPPs, mock tests and analytics. NEET 2027 & NEET 2028 batches.",
     canonical: "https://exam-builder-hub.emergent.host/courses",
   });

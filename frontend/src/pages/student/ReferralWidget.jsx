@@ -19,7 +19,7 @@ export default function ReferralWidget() {
   const share = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Abhyash Mantra", text: "Join me on Abhyash Mantra — practice NEET/JEE mocks:", url: link });
+        await navigator.share({ title: "FNJEE.com", text: "Join me on FNJEE.com — practice NEET/JEE mocks:", url: link });
       } catch { /* user cancelled */ }
     } else copy();
   };

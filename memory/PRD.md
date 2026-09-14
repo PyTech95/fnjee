@@ -81,3 +81,10 @@ Market-researched roadmap of 18 features. Building in batches.
 - Env configured: EMERGENT_LLM_KEY, JWT_SECRET, ENV added to backend/.env (MONGO_URL, DB_NAME, REACT_APP_BACKEND_URL preserved).
 - Verified: /api/health healthy, demo data seeded, auth login working (login requires role field), landing page renders.
 - deployment_agent: PASS — no blockers.
+
+## Rebrand to FNJEE.com — June 2026
+- Replaced brand name "Abhyash Mantra" → "FNJEE.com" across 28 files (75 occurrences): frontend pages, marketing copy, emails, index.html meta, manifest, print templates.
+- Added uploaded logo: cropped/transparent /frontend/public/fnjee-logo.png (header lockup) + regenerated favicon-32, icon-192/512, apple-touch, maskable from the logo mark.
+- Swapped placeholder "M" logo boxes for real logo in MarketingLayout (header+footer), AppShell (sidebar+mobile), Login, Signup.
+- Kept examnest.io seed emails/credentials unchanged (not user-facing brand).
+- Verified: landing, title, and login render new branding.

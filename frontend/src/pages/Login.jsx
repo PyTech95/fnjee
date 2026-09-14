@@ -42,8 +42,8 @@ export default function Login() {
       <div className="hidden lg:flex flex-col justify-between p-10 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 en-grid-bg opacity-10" aria-hidden="true" />
         <Link to="/" className="relative flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-primary-foreground text-primary grid place-items-center font-display font-bold">M</div>
-          <span className="font-display font-bold text-xl tracking-tight">Abhyash Mantra</span>
+          <div className="h-9 w-9 rounded-xl bg-white grid place-items-center shadow-sm"><img src="/icon-192.png" alt="FNJEE.com" className="h-7 w-7" /></div>
+          <span className="font-display font-bold text-xl tracking-tight">FNJEE.com</span>
         </Link>
         <div className="relative">
           <h2 className="font-display font-bold text-4xl leading-tight tracking-tight">Three portals.<br/>One serious edge<br/>for JEE / NEET prep.</h2>

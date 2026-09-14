@@ -9,5 +9,5 @@ const NAV = [
 ];
 
 export default function ParentLayout() {
-  return <AppShell nav={NAV} brandLabel="Abhyash Mantra" accent="Parent" />;
+  return <AppShell nav={NAV} brandLabel="FNJEE.com" accent="Parent" />;
 }

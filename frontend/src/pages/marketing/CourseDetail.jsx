@@ -27,7 +27,7 @@ export default function CourseDetail() {
   }, [slug, user]);
 
   useSEO({
-    title: course ? `${course.title} · ${course.target} · Abhyash Mantra` : "Course",
+    title: course ? `${course.title} · ${course.target} · FNJEE.com` : "Course",
     description: course?.highlights?.join(" · "),
     canonical: `https://exam-builder-hub.emergent.host/courses/${slug}`,
   });

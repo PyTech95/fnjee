@@ -1,7 +1,7 @@
 // Opens a clean printable question paper in a new window (Print → Save as PDF).
 const OPT = ["A", "B", "C", "D", "E", "F"];
 
-export function printPaper({ title, duration, questions = [], institution = "Abhyash Mantra", withAnswers = false }) {
+export function printPaper({ title, duration, questions = [], institution = "FNJEE.com", withAnswers = false }) {
   const totalMarks = questions.reduce((a, q) => a + (Number(q.marks) || 4), 0);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   const body = questions.map((q, i) => {

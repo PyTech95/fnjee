@@ -16,9 +16,9 @@ import {
 
 const FAQS = [
   { q: "What is the difference between Target Batch and Score Booster?", a: "Target Batch is a full 1-year NEET course covering all subjects with video lessons, DPPs and mock tests. Score Booster is built for droppers and final-prep students who need targeted weak-area drilling and AI-powered scheduling." },
-  { q: "How is Abhyash Mantra different?", a: "Most platforms are built around video lectures. We are built around daily MCQ practice — the activity most correlated with NEET / JEE rank: 40,000+ practice questions, daily DPPs, and a rank predictor after every session." },
+  { q: "How is FNJEE.com different?", a: "Most platforms are built around video lectures. We are built around daily MCQ practice — the activity most correlated with NEET / JEE rank: 40,000+ practice questions, daily DPPs, and a rank predictor after every session." },
   { q: "What does the 3-day free trial include?", a: "Full access to all platform features, daily DPPs, mock tests, video lessons, analytics and rank predictor. No credit card required." },
-  { q: "Can I use Abhyash Mantra alongside my offline coaching?", a: "Yes — most top-ranked students use it as their daily practice layer alongside classroom coaching. It complements, never replaces, your schedule." },
+  { q: "Can I use FNJEE.com alongside my offline coaching?", a: "Yes — most top-ranked students use it as their daily practice layer alongside classroom coaching. It complements, never replaces, your schedule." },
   { q: "What is the refund policy?", a: "3-day no-questions-asked refund from date of purchase." },
   { q: "Is this for Class 11, Class 12, or droppers?", a: "All three. Target Batch covers Class 11 and 12 over 1-2 years; Score Booster is built for droppers and late-stage Class 12 students." },
 ];
@@ -53,7 +53,7 @@ const FEATURES = [
 
 export default function MarketingHome() {
   useSEO({
-    title: "Abhyash Mantra — NEET 2027 & 2028 Practice Courses, CBT Mocks & Rank Predictor",
+    title: "FNJEE.com — NEET 2027 & 2028 Practice Courses, CBT Mocks & Rank Predictor",
     description: "MCQ practice and testing courses for serious NEET aspirants. Real NTA CBT interface, 8L+ MCQs with video solutions, daily DPPs, flashcards, mindmaps, rank predictor.",
     canonical: "https://hardened-quiz-app.preview.emergentagent.com/",
     ogImage: "https://hardened-quiz-app.preview.emergentagent.com/og-image.jpg",
@@ -61,7 +61,7 @@ export default function MarketingHome() {
       {
         "@context": "https://schema.org",
         "@type": "Organization",
-        name: "Abhyash Mantra",
+        name: "FNJEE.com",
         url: "https://hardened-quiz-app.preview.emergentagent.com/",
         logo: "https://hardened-quiz-app.preview.emergentagent.com/icon-512.png",
         description: "AI-powered CBT mock-test platform for JEE, NEET, Olympiads and competitive exams.",
@@ -70,7 +70,7 @@ export default function MarketingHome() {
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: "Abhyash Mantra",
+        name: "FNJEE.com",
         url: "https://hardened-quiz-app.preview.emergentagent.com/",
         potentialAction: {
           "@type": "SearchAction",
@@ -616,7 +616,7 @@ function CounsellingForm() {
           {busy ? "Sending…" : "Start free trial"}
         </button>
         <p className="text-[11px] text-[#52525B] leading-relaxed">
-          By submitting, I authorize Abhyash Mantra representatives to contact me via Call, SMS, Email or WhatsApp, overriding my DND registration. I agree to the Terms of Use.
+          By submitting, I authorize FNJEE.com representatives to contact me via Call, SMS, Email or WhatsApp, overriding my DND registration. I agree to the Terms of Use.
         </p>
       </form>
     </div>

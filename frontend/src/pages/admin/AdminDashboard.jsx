@@ -57,7 +57,7 @@ export default function AdminDashboard() {
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Overview</div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mt-1">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Everything happening in your Abhyash Mantra at a glance.</p>
+          <p className="text-muted-foreground mt-1">Everything happening in your FNJEE.com at a glance.</p>
         </div>
         <div className="flex gap-2">
           <Link to="/admin/import"><Button data-testid="quick-import" className="rounded-full">Import questions</Button></Link>

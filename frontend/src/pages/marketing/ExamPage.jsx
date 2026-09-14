@@ -17,7 +17,7 @@ export default function ExamPage() {
   const exam = EXAM_PAGES[slug];
 
   useSEO({
-    title: exam ? `${exam.heroHeadline} · Abhyash Mantra` : "Abhyash Mantra",
+    title: exam ? `${exam.heroHeadline} · FNJEE.com` : "FNJEE.com",
     description: exam?.heroSub,
     canonical: exam ? `${ORIGIN}/${exam.slug}` : undefined,
     jsonLd: exam ? [
@@ -26,7 +26,7 @@ export default function ExamPage() {
         "@type": "Course",
         "name": `${exam.name} Online Test Series`,
         "description": exam.heroSub,
-        "provider": { "@type": "Organization", "name": "Abhyash Mantra", "url": ORIGIN },
+        "provider": { "@type": "Organization", "name": "FNJEE.com", "url": ORIGIN },
       },
       {
         "@context": "https://schema.org",

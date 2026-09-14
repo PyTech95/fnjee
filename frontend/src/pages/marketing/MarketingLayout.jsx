@@ -22,11 +22,7 @@ export default function MarketingLayout() {
       <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-b-[1.5px] border-[#09090B]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 shrink-0" data-testid="brand-link">
-            <div className="h-9 w-9 rounded-xl bg-[#0A66C2] text-white grid place-items-center font-bold" style={{ fontFamily: '"Clash Display", sans-serif' }}>M</div>
-            <div className="leading-none">
-              <div className="font-bold text-lg tracking-tight" style={{ fontFamily: '"Clash Display", sans-serif' }}>Abhyash Mantra</div>
-              <div className="text-[10px] uppercase tracking-widest text-[#52525B] mt-0.5" style={{ fontFamily: '"JetBrains Mono", monospace' }}>AI CBT · JEE · NEET</div>
-            </div>
+            <img src="/fnjee-logo.png" alt="FNJEE.com — Forum for NEET JEE" className="h-10 w-auto" />
           </Link>
           <nav className="hidden lg:flex items-center gap-1">
             {NAV.map((n) => (
@@ -81,8 +77,8 @@ export default function MarketingLayout() {
           <div className="grid md:grid-cols-4 gap-10 mt-4">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8 rounded-lg bg-[#0A66C2] text-white grid place-items-center font-bold" style={{ fontFamily: '"Clash Display", sans-serif' }}>M</div>
-                <span className="font-bold" style={{ fontFamily: '"Clash Display", sans-serif' }}>Abhyash Mantra</span>
+                <img src="/icon-192.png" alt="FNJEE.com" className="h-8 w-8" />
+                <span className="font-bold" style={{ fontFamily: '"Clash Display", sans-serif' }}>FNJEE.com</span>
               </div>
               <p className="text-sm text-white/50 max-w-xs">AI-powered CBT practice for JEE, NEET, Olympiads and competitive exams — used by aspirants across India.</p>
             </div>
@@ -108,7 +104,7 @@ export default function MarketingLayout() {
         </div>
         <div className="border-t border-white/10">
           <div className="max-w-7xl mx-auto px-6 py-5 flex flex-wrap items-center justify-between gap-3 text-xs text-white/50">
-            <div>© 2026 Abhyash Mantra — Serious CBT practice, joyfully delivered.</div>
+            <div>© 2026 FNJEE.com — Serious CBT practice, joyfully delivered.</div>
             <div>Made in India · Trusted by aspirants in 12+ cities</div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 // Opens a clean printable scorecard in a new window (Print -> Save as PDF).
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
-export function printScorecard({ test, attempt, qmap = {}, student = "Student", institution = "Abhyash Mantra", brandColor = "#0A66C2", logoText = "M" }) {
+export function printScorecard({ test, attempt, qmap = {}, student = "Student", institution = "FNJEE.com", brandColor = "#0A66C2", logoText = "F" }) {
   const score = attempt.score ?? 0;
   const total = attempt.total_marks ?? 0;
   const pct = total ? Math.round((score / total) * 100) : 0;

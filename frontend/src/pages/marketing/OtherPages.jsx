@@ -12,7 +12,7 @@ const ORIGIN = "https://exam-builder-hub.emergent.host";
 /* ---------------- FEATURES ---------------- */
 export function Features() {
   useSEO({
-    title: "Features — CBT engine, deep analytics & AI recommendations · Abhyash Mantra",
+    title: "Features — CBT engine, deep analytics & AI recommendations · FNJEE.com",
     description: "Real NTA-style CBT interface, chapter-wise analytics, All India rank prediction, AI weak-topic drills, 5+ lakh question bank, daily practice streaks and multi-exam coverage.",
     canonical: `${ORIGIN}/features`,
   });
@@ -52,7 +52,7 @@ export function Features() {
 /* ---------------- HOW IT WORKS ---------------- */
 export function HowItWorks() {
   useSEO({
-    title: "How it works — from signup to rank prediction in 3 minutes · Abhyash Mantra",
+    title: "How it works — from signup to rank prediction in 3 minutes · FNJEE.com",
     description: "Sign up in 30 seconds, pick your exam, take your first CBT mock, and see your predicted rank + AI weak-topic drill — all inside 3 minutes.",
     canonical: `${ORIGIN}/how-it-works`,
   });
@@ -89,7 +89,7 @@ export function HowItWorks() {
 /* ---------------- PRICING ---------------- */
 export function Pricing() {
   useSEO({
-    title: "Pricing — Free CBT mocks & premium JEE / NEET test series · Abhyash Mantra",
+    title: "Pricing — Free CBT mocks & premium JEE / NEET test series · FNJEE.com",
     description: "Free forever plan with unlimited full CBT mocks. Premium courses starting ₹399 for JEE, NEET and combo packs. All plans include AI analytics and rank prediction.",
     canonical: `${ORIGIN}/pricing`,
   });
@@ -135,8 +135,8 @@ export function Pricing() {
 /* ---------------- RESULTS ---------------- */
 export function Results() {
   useSEO({
-    title: "Results & testimonials — real ranks, real students · Abhyash Mantra",
-    description: "Read how JEE and NEET aspirants across India — Kota, Delhi, Hyderabad, Patna — cracked their target rank with Abhyash Mantra's CBT practice and AI drills.",
+    title: "Results & testimonials — real ranks, real students · FNJEE.com",
+    description: "Read how JEE and NEET aspirants across India — Kota, Delhi, Hyderabad, Patna — cracked their target rank with FNJEE.com's CBT practice and AI drills.",
     canonical: `${ORIGIN}/results`,
   });
   return (
@@ -167,7 +167,7 @@ export function Results() {
 
 /* ---------------- FAQ ---------------- */
 const FAQS = [
-  { q: "Is Abhyash Mantra free?", a: "Yes — the Free plan gives you unlimited CBT mocks and basic analytics forever. Premium plans add AI weak-topic drills, deep analytics and reattempts." },
+  { q: "Is FNJEE.com free?", a: "Yes — the Free plan gives you unlimited CBT mocks and basic analytics forever. Premium plans add AI weak-topic drills, deep analytics and reattempts." },
   { q: "How does the CBT engine compare to NTA's?", a: "Pixel-identical. Same palette colours, same mark-for-review behaviour, same section switch, same auto-submit — so you feel zero surprise on exam day." },
   { q: "Do you cover NEET Biology (Botany + Zoology)?", a: "Yes — every NEET Biology MCQ is tagged to its NCERT source line, which is where 80%+ of NEET Biology questions come from." },
   { q: "Which devices do you support?", a: "Any modern mobile or desktop browser. The site is also installable as a Progressive Web App — no separate Android/iOS app needed." },
@@ -180,7 +180,7 @@ const FAQS = [
 
 export function FAQ() {
   useSEO({
-    title: "FAQ — Everything about Abhyash Mantra's CBT mock tests",
+    title: "FAQ — Everything about FNJEE.com's CBT mock tests",
     description: "Answers to common questions: pricing, refunds, CBT interface, NEET / JEE coverage, Olympiads, device support, rank prediction, parent portal and institute licences.",
     canonical: `${ORIGIN}/faq`,
     jsonLd: {
@@ -211,8 +211,8 @@ export function FAQ() {
 /* ---------------- CONTACT ---------------- */
 export function Contact() {
   useSEO({
-    title: "Contact — Get in touch with Abhyash Mantra",
-    description: "Get support, ask about institute licences, or partner with us. Email, WhatsApp, and phone details for the Abhyash Mantra team.",
+    title: "Contact — Get in touch with FNJEE.com",
+    description: "Get support, ask about institute licences, or partner with us. Email, WhatsApp, and phone details for the FNJEE.com team.",
     canonical: `${ORIGIN}/contact`,
   });
   return (

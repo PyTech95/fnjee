@@ -31,8 +31,8 @@ export default function Signup() {
     <div data-testid="signup-page" className="min-h-screen flex items-center justify-center p-8 bg-muted/30">
       <Card className="w-full max-w-lg p-8 rounded-3xl border-border">
         <Link to="/" className="flex items-center gap-2 mb-6">
-          <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center font-display font-bold">M</div>
-          <span className="font-display font-bold text-xl tracking-tight">Abhyash Mantra</span>
+          <div className="h-9 w-9 rounded-xl bg-white grid place-items-center shadow-sm border border-border"><img src="/icon-192.png" alt="FNJEE.com" className="h-7 w-7" /></div>
+          <span className="font-display font-bold text-xl tracking-tight">FNJEE.com</span>
         </Link>
         <h1 className="font-display font-bold text-3xl tracking-tight">Create your account</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-6">Pick your role and get started in seconds.</p>

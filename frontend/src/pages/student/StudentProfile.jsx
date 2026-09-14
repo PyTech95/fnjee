@@ -121,7 +121,7 @@ export default function StudentProfile() {
           </DialogTrigger>
           <DialogContent className="max-w-md p-0 overflow-hidden" data-testid="reminder-preview-dialog">
             <div className="bg-primary px-6 py-4">
-              <div className="text-white font-display font-bold text-lg">Abhyash Mantra</div>
+              <div className="text-white font-display font-bold text-lg">FNJEE.com</div>
               <div className="text-white/80 text-xs">Keep your streak alive 🔥</div>
             </div>
             <div className="p-6 text-center">

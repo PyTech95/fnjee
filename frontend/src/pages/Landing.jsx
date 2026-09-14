@@ -21,7 +21,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center font-display font-bold">E</div>
-            <span className="font-display font-bold text-xl tracking-tight">Abhyash Mantra</span>
+            <span className="font-display font-bold text-xl tracking-tight">FNJEE.com</span>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/login"><Button data-testid="header-login-btn" variant="ghost" className="rounded-full">Log in</Button></Link>
@@ -43,7 +43,7 @@ export default function Landing() {
               <span className="text-primary">actually enjoy running.</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-              Upload your question paper in <b>PageMaker, Word, Excel, PDF or Google Drive</b> — Abhyash Mantra parses it,
+              Upload your question paper in <b>PageMaker, Word, Excel, PDF or Google Drive</b> — FNJEE.com parses it,
               organises it, and turns it into timed mock tests with analytics. Three portals: Admin, Student, Parent.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -115,7 +115,7 @@ export default function Landing() {
 
       <footer className="border-t border-border">
         <div className="max-w-7xl mx-auto px-6 py-6 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div>© 2026 Abhyash Mantra — Serious exam prep, joyfully delivered.</div>
+          <div>© 2026 FNJEE.com — Serious exam prep, joyfully delivered.</div>
           <div className="flex gap-4">
             <span>admin@examnest.io / Admin@123</span>
             <span>student1@examnest.io / Student@123</span>

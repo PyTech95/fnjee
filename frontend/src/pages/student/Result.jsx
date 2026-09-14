@@ -88,11 +88,11 @@ export default function Result() {
   const gradeColor = percent >= 70 ? "text-emerald-600" : percent >= 50 ? "text-primary" : percent >= 30 ? "text-amber-600" : "text-destructive";
 
   const share = () => {
-    const text = `I scored ${attempt.score}/${attempt.total_marks} (${percent}%) on ${test.title} @ Abhyash Mantra — predicted percentile ${percentile}. Try it: `;
+    const text = `I scored ${attempt.score}/${attempt.total_marks} (${percent}%) on ${test.title} @ FNJEE.com — predicted percentile ${percentile}. Try it: `;
     const url = window.location.origin;
     const wa = `https://wa.me/?text=${encodeURIComponent(text + url)}`;
     if (navigator.share) {
-      navigator.share({ title: "Abhyash Mantra score", text, url }).catch(() => window.open(wa, "_blank"));
+      navigator.share({ title: "FNJEE.com score", text, url }).catch(() => window.open(wa, "_blank"));
     } else { window.open(wa, "_blank"); }
     toast.success("Sharing…");
   };
@@ -101,7 +101,7 @@ export default function Result() {
     try {
       const d = await duelsApi.create({ test_id: test.id, attempt_id: attempt.id });
       const link = `${window.location.origin}/duel/${d.code}`;
-      const text = `⚔️ I scored ${attempt.score}/${attempt.total_marks} on ${test.title}. Think you can beat me? Abhyash Mantra duel:`;
+      const text = `⚔️ I scored ${attempt.score}/${attempt.total_marks} on ${test.title}. Think you can beat me? FNJEE.com duel:`;
       const wa = `https://wa.me/?text=${encodeURIComponent(text + " " + link)}`;
       try { await navigator.clipboard.writeText(link); } catch {}
       window.open(wa, "_blank");

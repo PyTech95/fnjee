@@ -119,7 +119,7 @@ export const EXAM_PAGES = {
 export const CITIES = [
   { slug: "delhi", name: "Delhi NCR", state: "Delhi", tagline: "Kota-style test discipline from your Delhi home." },
   { slug: "kota", name: "Kota", state: "Rajasthan", tagline: "Extend your Kota classroom with CBT tests every night." },
-  { slug: "patna", name: "Patna", state: "Bihar", tagline: "Bihar's toppers train on Abhyash Mantra — you should too." },
+  { slug: "patna", name: "Patna", state: "Bihar", tagline: "Bihar's toppers train on FNJEE.com — you should too." },
   { slug: "lucknow", name: "Lucknow", state: "Uttar Pradesh", tagline: "The UP JEE/NEET cohort's daily practice partner." },
   { slug: "jaipur", name: "Jaipur", state: "Rajasthan", tagline: "Pink City aspirants deserve pink-slip ranks." },
   { slug: "hyderabad", name: "Hyderabad", state: "Telangana", tagline: "South zone rankers train with our IIT-JEE mocks." },
@@ -155,7 +155,7 @@ Do that for a year and your Biology accuracy naturally lands in the 90%+ zone. P
 **Pair it with weekly full mocks**
 Every Sunday, take a full 3h 20min mock in one sitting. That's how you build stamina — the invisible skill that separates rank 500 from rank 5000.
 
-Start free on Abhyash Mantra and lock in your daily streak today.`,
+Start free on FNJEE.com and lock in your daily streak today.`,
   },
   {
     slug: "jee-main-cbt-interface-tips",
@@ -182,7 +182,7 @@ Sweep the palette for stragglers — one dropped Q can be 4 marks.
 The kid clicking rapidly in the corner is almost never the topper. Stay in your own tempo.
 
 **6. Practice on the exact CBT layout**
-This is the whole point of Abhyash Mantra — our JEE interface is pixel-identical to NTA's.
+This is the whole point of FNJEE.com — our JEE interface is pixel-identical to NTA's.
 
 **7. Deep-breath at every section switch**
 30 seconds. Every switch. Physiologically resets your prefrontal cortex.
@@ -210,12 +210,12 @@ Now full mocks dominate. Chapter-wise only for weak spots the mocks reveal.
 **The 10% rule**
 In every phase, keep 10% of your practice for PYQs — they're the ground truth of what actually gets asked.
 
-On Abhyash Mantra, use the Custom Test Generator to blend chapter-wise + PYQs in one click.`,
+On FNJEE.com, use the Custom Test Generator to blend chapter-wise + PYQs in one click.`,
   },
 ];
 
 export const TESTIMONIALS = [
-  { name: "Aditi R.", role: "NEET AIR 412", city: "Kota", quote: "The daily NCERT MCQ streak on Abhyash Mantra is literally why I stayed disciplined for 14 months." },
+  { name: "Aditi R.", role: "NEET AIR 412", city: "Kota", quote: "The daily NCERT MCQ streak on FNJEE.com is literally why I stayed disciplined for 14 months." },
   { name: "Karan M.", role: "JEE Main 99.4 %ile", city: "Delhi", quote: "The CBT interface was identical to what NTA showed us. Zero surprises on exam day." },
   { name: "Sana P.", role: "NEET UG rank 1,832", city: "Hyderabad", quote: "The rank predictor kept me honest. Every Sunday mock told me where I really stood." },
   { name: "Rohit K.", role: "JEE Advanced qualifier", city: "Patna", quote: "The weak-topic auto-drill saved my Organic Chemistry. Went from 40% to 78% in six weeks." },

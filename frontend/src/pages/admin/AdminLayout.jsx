@@ -17,5 +17,5 @@ const NAV = [
 ];
 
 export default function AdminLayout() {
-  return <AppShell nav={NAV} brandLabel="Abhyash Mantra" accent="Admin" />;
+  return <AppShell nav={NAV} brandLabel="FNJEE.com" accent="Admin" />;
 }

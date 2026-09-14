@@ -9,13 +9,13 @@ const ORIGIN = "https://exam-builder-hub.emergent.host";
 
 export function CitiesIndex() {
   useSEO({
-    title: "Cities we serve — JEE & NEET online test series across India · Abhyash Mantra",
-    description: "Abhyash Mantra serves JEE, NEET, Olympiad and govt exam aspirants in Delhi, Kota, Patna, Lucknow, Hyderabad, Mumbai, Bengaluru and beyond. Kota-level test discipline from anywhere.",
+    title: "Cities we serve — JEE & NEET online test series across India · FNJEE.com",
+    description: "FNJEE.com serves JEE, NEET, Olympiad and govt exam aspirants in Delhi, Kota, Patna, Lucknow, Hyderabad, Mumbai, Bengaluru and beyond. Kota-level test discipline from anywhere.",
     canonical: `${ORIGIN}/cities`,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "Cities we serve — Abhyash Mantra",
+      "name": "Cities we serve — FNJEE.com",
       "url": `${ORIGIN}/cities`,
       "hasPart": CITIES.map(c => ({
         "@type": "Service",
@@ -30,7 +30,7 @@ export function CitiesIndex() {
       <div className="max-w-2xl mb-10">
         <div className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Cities we serve</div>
         <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-tight mt-2">JEE & NEET test series across India</h1>
-        <p className="text-muted-foreground mt-4 max-w-xl">Whether you're in a metro or a Tier-2 city, Abhyash Mantra brings Kota-level test discipline to your screen. Pick your city below.</p>
+        <p className="text-muted-foreground mt-4 max-w-xl">Whether you're in a metro or a Tier-2 city, FNJEE.com brings Kota-level test discipline to your screen. Pick your city below.</p>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {CITIES.map((c) => (
@@ -58,7 +58,7 @@ export function CitiesIndex() {
 export function CityPage() {
   const { slug } = useParams();
   const city = CITIES.find((c) => c.slug === slug);
-  const title = city ? `JEE & NEET Online Test Series for ${city.name} · Abhyash Mantra` : "Abhyash Mantra";
+  const title = city ? `JEE & NEET Online Test Series for ${city.name} · FNJEE.com` : "FNJEE.com";
   const desc = city ? `Online CBT mock tests for JEE, NEET, Olympiads and govt exams for students in ${city.name}, ${city.state}. ${city.tagline}` : undefined;
 
   useSEO({
@@ -68,7 +68,7 @@ export function CityPage() {
       "@context": "https://schema.org",
       "@type": "Service",
       "serviceType": "Online CBT mock tests for JEE and NEET",
-      "provider": { "@type": "Organization", "name": "Abhyash Mantra" },
+      "provider": { "@type": "Organization", "name": "FNJEE.com" },
       "areaServed": { "@type": "City", "name": city.name },
     } : undefined,
   });
@@ -113,7 +113,7 @@ export function CityPage() {
       <section className="max-w-4xl mx-auto px-6 py-14">
         <h2 className="font-display font-bold text-2xl sm:text-3xl tracking-tight mb-6">Prep smart in {city.name}</h2>
         <div className="prose prose-slate dark:prose-invert text-foreground/80 max-w-none text-sm leading-relaxed space-y-3">
-          <p>Abhyash Mantra is used by thousands of aspirants in {city.name} and across {city.state}. Our exam engine is engineered to be pixel-identical to the NTA JEE and NEET CBT interfaces, so on the day of the real test you feel zero interface surprise.</p>
+          <p>FNJEE.com is used by thousands of aspirants in {city.name} and across {city.state}. Our exam engine is engineered to be pixel-identical to the NTA JEE and NEET CBT interfaces, so on the day of the real test you feel zero interface surprise.</p>
           <p>We recommend two habits for {city.name} aspirants: (1) a daily NCERT MCQ drill of 20–25 questions in the subject you're weakest in, and (2) a full-length weekend mock every Sunday morning. Track both on your streak calendar.</p>
           <p>Sign up in 30 seconds — free — and take your first full mock today.</p>
         </div>

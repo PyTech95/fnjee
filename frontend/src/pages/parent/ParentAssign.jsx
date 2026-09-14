@@ -47,7 +47,7 @@ export default function ParentAssign() {
       <div>
         <div className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Assign</div>
         <h1 className="font-display font-bold text-3xl tracking-tight mt-1">Create a custom practice test</h1>
-        <p className="text-muted-foreground mt-1">Pick subjects and difficulty — Abhyash Mantra builds it in a click.</p>
+        <p className="text-muted-foreground mt-1">Pick subjects and difficulty — FNJEE.com builds it in a click.</p>
       </div>
 
       <Card className="en-card p-6">

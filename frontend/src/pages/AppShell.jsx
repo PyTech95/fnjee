@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { useEffect, useState } from "react";
 import { Moon, Sun, LogOut, Menu, MoreHorizontal } from "lucide-react";
 
-export default function AppShell({ nav, brandLabel = "Abhyash Mantra", accent = "admin" }) {
+export default function AppShell({ nav, brandLabel = "FNJEE.com", accent = "admin" }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -42,7 +42,7 @@ export default function AppShell({ nav, brandLabel = "Abhyash Mantra", accent = 
 
   const brandMark = (
     <div className="flex items-center gap-2">
-      <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center font-display font-bold">M</div>
+      <img src="/icon-192.png" alt="FNJEE.com" className="h-9 w-9 rounded-xl" />
       <div>
         <div className="font-display font-bold text-lg tracking-tight leading-none">{brandLabel}</div>
         <div className="text-xs text-muted-foreground uppercase tracking-widest mt-0.5">{accent}</div>
@@ -58,7 +58,7 @@ export default function AppShell({ nav, brandLabel = "Abhyash Mantra", accent = 
         <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto en-scroll">
           {nav.map((n) => <NavItem key={n.to} n={n} />)}
         </nav>
-        <div className="p-4 text-xs text-muted-foreground border-t border-border">v1.2 · Abhyash Mantra PWA</div>
+        <div className="p-4 text-xs text-muted-foreground border-t border-border">v1.2 · FNJEE.com PWA</div>
       </aside>
 
       {/* main */}
@@ -80,7 +80,7 @@ export default function AppShell({ nav, brandLabel = "Abhyash Mantra", accent = 
                   </nav>
                 </SheetContent>
               </Sheet>
-              <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-display font-bold">M</div>
+              <img src="/icon-192.png" alt="FNJEE.com" className="h-8 w-8 rounded-lg" />
               <span className="font-display font-semibold truncate max-w-[9rem]">{brandLabel}</span>
             </div>
             <div className="ml-auto flex items-center gap-2">

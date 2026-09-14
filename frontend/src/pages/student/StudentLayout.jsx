@@ -24,5 +24,5 @@ const NAV = [
 ];
 
 export default function StudentLayout() {
-  return <AppShell nav={NAV} brandLabel="Abhyash Mantra" accent="Student" />;
+  return <AppShell nav={NAV} brandLabel="FNJEE.com" accent="Student" />;
 }
