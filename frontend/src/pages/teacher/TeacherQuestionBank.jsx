@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Search, Printer, FilePlus2, X, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import MathText from "@/components/MathText";
+import { QuestionContent } from "@/components/QuestionContent";
 import { printPaper } from "@/lib/printPaper";
 
 const DIFF_COLOR = { easy: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", medium: "bg-amber-500/10 text-amber-600 border-amber-500/20", hard: "bg-red-500/10 text-red-600 border-red-500/20" };
@@ -115,7 +116,10 @@ export default function TeacherQuestionBank() {
                 <div className="flex items-start gap-3">
                   <Checkbox data-testid={`tq-check-${q.id}`} checked={selectedIds.has(q.id)} onCheckedChange={() => toggle(q)} onClick={(e) => e.stopPropagation()} className="mt-1" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium line-clamp-2"><MathText>{q.text}</MathText></div>
+                    <details data-testid={`teacher-preview-${q.id}`} onClick={(e) => e.stopPropagation()}>
+                      <summary data-testid={`teacher-preview-toggle-${q.id}`} className="font-medium cursor-pointer">{q.text.split('\n')[0]}</summary>
+                      <QuestionContent question={q} testId={`teacher-question-${q.id}`} className="mt-3" />
+                    </details>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge variant="secondary" className="rounded-full">{q.subject}</Badge>
                       {q.chapter && <Badge variant="outline" className="rounded-full">{q.chapter}</Badge>}

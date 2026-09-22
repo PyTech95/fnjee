@@ -62,7 +62,7 @@ export default function StudentDashboard() {
           <h3 className="font-display font-semibold text-lg mb-4">Score trend</h3>
           <div className="h-64">
             {stats?.trend?.length > 0 ? (
-              <ResponsiveContainer>
+              <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0}>
                 <LineChart data={stats.trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))" }} />

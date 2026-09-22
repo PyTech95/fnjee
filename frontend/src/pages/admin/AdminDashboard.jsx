@@ -95,7 +95,7 @@ export default function AdminDashboard() {
             <Badge variant="secondary" className="rounded-full">{data.attempts} attempts</Badge>
           </div>
           <div className="h-64">
-            <ResponsiveContainer>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0}>
               <BarChart data={data.subject_avg || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="subject" tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
         <Card className="en-card p-6">
           <h3 className="font-display font-semibold text-lg mb-4">Question mix</h3>
           <div className="h-64">
-            <ResponsiveContainer>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0}>
               <PieChart>
                 <Pie data={(data.subject_avg || []).map((s) => ({ name: s.subject, value: s.attempts }))}
                      dataKey="value" innerRadius={50} outerRadius={90}>

@@ -1,7 +1,9 @@
-# ExamNest / "Mock Test Club" — Quiz & Mock-Test Platform
+# FNJEE.com — Quiz & Mock-Test Platform
 
 ## Original Problem Statement
 User uploaded an existing React + FastAPI + MongoDB quiz application (Quiz-test-17aug-main.zip) and asked to "deploy this" under a hardened deployment plan (audit → harden → containerize → DB → build → go-live), with explicit security concerns: server-side scoring, no answer-key leakage, dedupe/one-attempt lock, server-side timer, concurrent load.
+
+Latest request: "Sir table and picture nhin h kisi bhi question me Only text h esme proper tabel aana chahiye - ai se enhance karke website me daliye"; confirmed "yes please with image the question". User supplied DPP 9 and DPP 10 solutions PDFs and approved using the existing AI configuration with sensible defaults.
 
 ## Stack / Architecture
 - Frontend: React 18 (CRA + craco), Tailwind, shadcn/ui, react-router 7. API via `REACT_APP_BACKEND_URL` + `/api`.
@@ -88,3 +90,44 @@ Market-researched roadmap of 18 features. Building in batches.
 - Swapped placeholder "M" logo boxes for real logo in MarketingLayout (header+footer), AppShell (sidebar+mobile), Login, Signup.
 - Kept examnest.io seed emails/credentials unchanged (not user-facing brand).
 - Verified: landing, title, and login render new branding.
+
+## Visual Questions & PDF Import — 2026-09-22
+### Source limitations and content decisions
+- Both uploaded PDFs contain **solutions only**, 20 numbered explanations each; original question stems/options and referenced diagrams are absent. DPP 10 contains a comparison table in solution 20. Files preserved at `backend/source_documents/dpp-9-solutions.pdf` and `dpp-10-solutions.pdf`.
+- User was informed that new papers are **AI-adapted practice**, not reconstructed originals. Gemini 3 Flash genuinely generated 40 questions; no API mocks.
+- Added two publicly assigned Biology tests (20 questions, 30 minutes, 80 marks, +4/−1), visibly labelled AI-adapted:
+  - DPP 9: `0e87d454-f910-5e29-824f-6f37a26a14ff` — 7 image questions, 4 question tables.
+  - DPP 10: `93498a34-4acf-5660-b70e-ebdefcb810f7` — 6 image questions, 5 question tables; Q20 has a restored solution comparison table plus exact source-table image.
+- AI raw output saved in `backend/dpp_9_content.json`, `dpp_10_content.json`. **Publish via `reviewed_dpp.py` / `seed_dpp_papers.py`, not raw JSON**: editorial corrections address pulmonary-vein valves, platelet/coagulation wording, ABO red-cell compatibility scope, and textbook Rh frequency. Accessible diagram descriptions contain only visible information, not hidden label identities.
+- Six deterministic scientific schematic types (blood route, vessel cross-sections, conduction, blood fractions, portal route, haemoglobin) generated using Pillow in `biology_visuals.py`; bundled licensed font in `backend/assets`. Self-contained PNG data URLs persisted in Mongo; no external image host dependency.
+- DPP seed uses deterministic uuid5 IDs and `$setOnInsert`; does not overwrite subsequent edits. It is called from server startup. Re-running does not duplicate questions/tests.
+
+### Existing content repaired
+- Restored actual two-column matching tables for CBSE Biology Q31–38 through `biology_tables.py` and the existing seed.
+- Preserved all 75 original questions, option order, answer keys and 17 original diagram images.
+
+### Shared rendering & importer
+- `MathText.jsx` now renders GFM tables safely with `react-markdown`/`remark-gfm`; `InlineFormula.jsx` handles LaTeX separately. This avoids the development visual-editor Babel recursion encountered with self-referencing JSX. No raw HTML rendering.
+- `QuestionContent.jsx` / `QuestionImage` provide responsive un-cropped images, accessible labels, zoom dialog, invalid-URL filtering and image-load errors. Shared across exams, results, adaptive, revision, battles, admin/teacher question-bank previews and import review.
+- `printPaper.js` prints tables, formulas and diagrams; solutions/solution images only appear with answer-key mode. Unique print test IDs and safe escaping retained.
+- PDF import now uses Gemini vision with the original PDF attachment via `visual_pdf.py`; tables remain Markdown, diagrams are bounded high-resolution PyMuPDF crops preserving labels. Limits: 25 MB / 30 pages per import; 240s AI timeout; temporary PDF deleted afterward.
+- Explicit import modes: extract originals (solutions-only PDF yields zero questions plus warning) or create adapted practice from solutions. Review UI shows question/solution media separately; supports removing a bad image and editing text/options. Final UI save approves reviewed selections.
+- New QuestionIn fields: `image_alt`, `explanation_image_url`, `content_origin`, `source_number`. Existing `image_url` remains compatible. All Mongo returns exclude `_id` or use existing clean/model paths.
+- Student test payload retains question images but hides answer keys, hints, explanations **and explanation images** until submission; solution reveal also respects `show_solutions_after`. `_strip_q` now carries question image fields for adaptive/revision/battles.
+- Wrapped narrow-screen exam controls, added min-width constraints, and resolved dashboard/result Recharts initial negative-dimension warnings without suppressing console output.
+
+### Verification
+- Testing agent report: `/app/test_reports/iteration_2.json`; 9/9 backend tests passed, main browser exam/import flows passed. Agent omitted strict print workflow and used a generated solutions fixture due to a wrong file path; both gaps subsequently covered by main agent.
+- Corrected regression test path to the actual uploaded DPP 10 file and tightened diagram/table/key assertions and fixture cleanup. Rerun: **9/9 passed**, `/app/test_reports/dpp-retest.log`.
+- Real original-question PDF fixture extraction retained its table, cropped image and answer mapping; commit preserved media metadata. Exact DPP 10 PDF in extract mode correctly returned solutions-only warning, zero questions.
+- Browser verified admin previews, student image enlargement, exam submission/result reveal; print student copy has table/image/LaTeX and zero answers, teacher copy includes solution table and source image.
+- Responsive browsing contexts at 320/768/1024/1440px: image and table questions fit without page overflow. Dashboard charts render without negative-dimension warnings.
+- Production build passed (`test_reports/final-build.log`) with pre-existing hook-dependency/bundle-size warnings, no compiler errors. Python compilation passed. Health API healthy; final DB 135 questions, 6 tests; no disposable question or print fixtures remaining.
+- Testing-created account recorded in `memory/test_credentials.md`. Student3 submitted both DPPs. Dedicated autotest account has an unsubmitted DPP9 attempt from responsive checks; Student1/Student2 remain available for new sets.
+
+### Prioritized next actions
+- P0: No known blocking issues in the implemented table/image flows.
+- P1: User/teacher review of the adapted DPPs; retain clear AI-adapted labels. Original question PDFs are required only if exact original-paper reproduction is later requested.
+- P1 deferred: `fnjee.com` domain connection remains outside this task.
+- P2: Diagram-only practice filter; teacher approval indicators for AI-generated content; broader old roadmap unchanged.
+- P2 technical backlog: existing monolithic server and pre-existing hook warnings. Existing JWT-secret fallback was noted by testing but auth was not changed in this task; protected environment secret is configured.

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, CheckCircle2, XCircle, Brain, Loader2, Trophy } from "lucide-react";
 import MathText from "@/components/MathText";
+import { QuestionContent, QuestionImage } from "@/components/QuestionContent";
 import { toast } from "sonner";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -89,7 +90,7 @@ export default function Revision() {
             <Badge variant="secondary" className="rounded-full">{q.subject}{q.chapter ? ` · ${q.chapter}` : ""}</Badge>
             <span className="text-muted-foreground tabular-nums">{idx + 1} / {queue.length}</span>
           </div>
-          <div className="text-base font-medium leading-relaxed"><MathText>{q.text}</MathText></div>
+          <QuestionContent question={q} testId="revision-question" className="text-base font-medium leading-relaxed" />
           <div className="mt-4 space-y-2">
             {(q.options || []).map((opt, i) => {
               const isSel = sel === i;
@@ -114,6 +115,7 @@ export default function Revision() {
             <div className={`mt-4 p-3 rounded-xl text-sm ${result.correct ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-rose-500/10 text-rose-700 dark:text-rose-400"}`} data-testid="revision-feedback">
               <div className="font-semibold mb-1">{result.correct ? "Correct — pushed further out 🎉" : "Not quite — you'll see this again tomorrow"}</div>
               {result.explanation && <div className="text-foreground/70"><MathText>{result.explanation}</MathText></div>}
+              <QuestionImage src={result.explanation_image_url} alt="Solution illustration" testId="revision-solution-image" />
             </div>
           )}
 

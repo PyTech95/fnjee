@@ -9,6 +9,8 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { QuestionContent, QuestionImage } from "@/components/QuestionContent";
+import MathText from "@/components/MathText";
 
 const DIFF_COLOR = { easy: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", medium: "bg-amber-500/10 text-amber-600 border-amber-500/20", hard: "bg-red-500/10 text-red-600 border-red-500/20" };
 
@@ -103,7 +105,22 @@ export default function QuestionBank() {
             {!loading && rows.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No questions yet. Try the Import Wizard.</TableCell></TableRow>}
             {rows.map((r) => (
               <TableRow key={r.id} data-testid={`qrow-${r.id}`}>
-                <TableCell className="max-w-md"><div className="font-medium line-clamp-2">{r.text}</div></TableCell>
+                <TableCell className="max-w-md min-w-[220px]">
+                  <details data-testid={`question-preview-${r.id}`}>
+                    <summary data-testid={`question-preview-toggle-${r.id}`} className="cursor-pointer font-medium">
+                      {r.text.split('\n')[0]}
+                      {(r.image_url || r.text.includes('| ---')) && <span className="ml-2 text-xs text-primary">{r.image_url ? "Image" : "Table"}</span>}
+                    </summary>
+                    <div className="mt-4 space-y-3">
+                      {r.content_origin === "ai_adapted" && <Badge data-testid={`question-origin-${r.id}`} variant="outline">AI-adapted practice</Badge>}
+                      <QuestionContent question={r} testId={`bank-question-${r.id}`} />
+                      {r.options?.map((o,i) => <div key={i} data-testid={`bank-option-${r.id}-${i}`}><b>{String.fromCharCode(65+i)}.</b> <MathText>{o}</MathText></div>)}
+                      <div data-testid={`bank-answer-${r.id}`} className="text-sm text-emerald-700">Answer: {(r.correct || []).join(', ')}</div>
+                      <MathText>{r.explanation}</MathText>
+                      <QuestionImage src={r.explanation_image_url} testId={`bank-solution-${r.id}`} alt="Source solution illustration" />
+                    </div>
+                  </details>
+                </TableCell>
                 <TableCell><Badge variant="secondary" className="rounded-full">{r.subject}</Badge></TableCell>
                 <TableCell className="text-sm text-muted-foreground">{r.chapter || "—"}</TableCell>
                 <TableCell className="text-xs">{r.type}</TableCell>

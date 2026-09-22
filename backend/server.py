@@ -16,6 +16,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 from parsers import parse_excel, parse_docx, parse_pdf, parse_pagemaker, download_google_drive
 from ai_parser import ai_extract_questions, ai_predict_difficulty, ai_generate_quiz
+from visual_pdf import parse_visual_pdf
 from regex_extractor import regex_extract_questions
 
 MONGO_URL = os.environ['MONGO_URL']
@@ -140,6 +141,10 @@ class QuestionIn(BaseModel):
     hint: str = ''
     language: str = 'English'
     image_url: Optional[str] = None
+    image_alt: str = 'Question diagram'
+    explanation_image_url: Optional[str] = None
+    content_origin: Optional[str] = None
+    source_number: Optional[int] = None
     source: Optional[str] = None
     status: Literal['draft', 'review', 'approved', 'archived'] = 'approved'
     # Extended metadata (spec: exam / class / year / paper series / tags)
@@ -369,6 +374,7 @@ async def import_parse(
     subject_default: Optional[str] = Form("Physics"),
     raw_text: Optional[str] = Form(None),
     use_ai: Optional[bool] = Form(True),
+    import_mode: str = Form("extract"),
     user: dict = Depends(require_role('admin')),
 ):
     data: bytes = b""; filename = ""; text: str = ""
@@ -384,10 +390,18 @@ async def import_parse(
     else:
         raise HTTPException(400, "Provide file, drive_url or raw_text")
 
+    if import_mode not in ("extract", "adapt"):
+        raise HTTPException(400, "Choose extract or adapt mode")
+    if import_mode == "adapt" and ext != "pdf":
+        raise HTTPException(400, "Adapted practice currently supports PDF files. Choose 'Extract original questions' for other formats.")
     parsed: List[dict] = []; errors: List[str] = []; used_ai = False; used_regex = False
+    document_kind = "questions"
     try:
         # 1) Excel is structured — go straight to Excel parser
-        if ext in ("xlsx", "xls"):
+        if ext == "pdf" and use_ai:
+            parsed, errors, document_kind = await parse_visual_pdf(data, subject_default or "Physics", import_mode)
+            used_ai = True
+        elif ext in ("xlsx", "xls"):
             parsed, errors = parse_excel(data)
         else:
             # 2) Extract plain text from the source
@@ -426,6 +440,7 @@ async def import_parse(
     # duplicate detection against existing bank
     for p in parsed:
         p.setdefault("id_tmp", new_id())
+        p.setdefault("source", filename)
         dup = await db.questions.find_one({"text": p.get("text", "")}, {"_id": 0, "id": 1})
         p["duplicate"] = bool(dup)
 
@@ -434,13 +449,15 @@ async def import_parse(
             hint = ("This PageMaker file has heavy embedded graphics. Text was extracted but no clear "
                     "numbered questions were detected. Tip: open in PageMaker → export as PDF or "
                     "Word (.docx) → re-upload for best results.")
-        else:
+        elif document_kind != "solutions":
             hint = ("No numbered questions detected. Make sure the file contains 'Q1.' / '1.' style "
                     "numbering, or paste the text directly using the 'Paste text' tab.")
-        errors.insert(0, hint)
+        else:
+            hint = None
+        if hint: errors.insert(0, hint)
 
     return {"filename": filename, "file_type": ext, "used_ai": used_ai, "used_regex": used_regex,
-            "count": len(parsed), "questions": parsed, "errors": errors}
+            "count": len(parsed), "questions": parsed, "errors": errors, "document_kind": document_kind}
 
 
 @api.post("/import/commit")
@@ -535,6 +552,7 @@ async def get_test(tid: str, include_questions: bool = False, user: dict = Depen
                 q.pop("hint", None)
                 if not reveal_solutions:
                     q.pop("explanation", None)
+                    q.pop("explanation_image_url", None)
                 safe_qs.append(q)
             qs = safe_qs
         t["questions"] = qs
@@ -2630,7 +2648,8 @@ def _strip_q(q):
     return {"id": q["id"], "text": q.get("text", ""), "type": q.get("type", "mcq_single"),
             "options": q.get("options", []), "subject": q.get("subject", ""),
             "chapter": q.get("chapter", ""), "topic": q.get("topic", ""),
-            "difficulty": q.get("difficulty", "medium"), "marks": q.get("marks", 4)}
+            "difficulty": q.get("difficulty", "medium"), "marks": q.get("marks", 4),
+            "image_url": q.get("image_url"), "image_alt": q.get("image_alt", "Question diagram")}
 
 
 # ============================================================
@@ -2724,7 +2743,8 @@ async def reviews_grade(inp: ReviewGradeIn, user: dict = Depends(require_role('s
             "subject": q.get("subject", ""), "chapter": q.get("chapter", ""), "lapses": 0 if correct else 1,
             "created_at": now.isoformat(), **upd})
     return {"correct": correct, "correct_answer": _correct_letter(q),
-            "correct_options": q.get("correct", []), "explanation": q.get("explanation", "")}
+            "correct_options": q.get("correct", []), "explanation": q.get("explanation", ""),
+            "explanation_image_url": q.get("explanation_image_url")}
 
 
 # ============================================================
@@ -2884,7 +2904,7 @@ async def adaptive_answer(inp: AdaptiveAnswerIn, user: dict = Depends(require_ro
            "status": "finished" if finished else "active"}
     await db.adaptive_sessions.update_one({"id": s["id"]}, {"$set": upd})
     resp = {"correct": correct, "correct_answer": _correct_letter(q),
-            "explanation": q.get("explanation", ""), "next_difficulty": new_diff,
+            "explanation": q.get("explanation", ""), "explanation_image_url": q.get("explanation_image_url"), "next_difficulty": new_diff,
             "answered": answered, "length": s["length"], "correct_count": ncorrect,
             "finished": finished}
     if finished:
@@ -3207,6 +3227,11 @@ async def _startup():
         log.info(f"CBSE Biology paper seeded: {res}")
     except Exception as e:
         log.warning(f"Bio paper seed skipped: {e}")
+    try:
+        from seed_dpp_papers import run_dpp_seed
+        log.info(f"DPP visual practice seeded: {await run_dpp_seed(db)}")
+    except Exception as e:
+        log.warning(f"DPP practice seed skipped: {e}")
 
 
 @app.on_event("shutdown")

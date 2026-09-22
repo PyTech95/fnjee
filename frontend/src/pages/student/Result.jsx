@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Toolti
 import { celebrate } from "@/pages/student/LiveExam";
 import { toast } from "sonner";
 import MathText from "@/components/MathText";
+import { QuestionContent, QuestionImage } from "@/components/QuestionContent";
 import { printScorecard } from "@/lib/printScorecard";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -259,7 +260,7 @@ export default function Result() {
         <Card className="en-card p-6 lg:col-span-2">
           <h3 className="font-display font-semibold text-lg mb-4">Subject breakdown</h3>
           <div className="h-64">
-            <ResponsiveContainer>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="subject" tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -364,7 +365,7 @@ export default function Result() {
           <Card className="en-card p-6" data-testid="time-per-question">
             <h3 className="font-display font-semibold text-lg mb-1">Where your time went</h3>
             <p className="text-sm text-muted-foreground mb-4">Your 10 slowest questions (avg {avg}s/question). Green = correct, red = wrong — trim time on the reds.</p>
-            <ResponsiveContainer width="100%" height={Math.max(200, top.length * 34)}>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height={Math.max(200, top.length * 34)}>
               <BarChart data={top} layout="vertical" margin={{ left: 8, right: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 12 }} unit="s" />
@@ -413,8 +414,7 @@ export default function Result() {
                         </button>
                       )}
                     </div>
-                    {q && <div className="text-sm"><MathText>{q.text}</MathText></div>}
-                    {q?.image_url && <img src={q.image_url} alt="question" className="mt-2 rounded-lg border border-border max-h-48 object-contain" loading="lazy" />}
+                    {q && <QuestionContent question={q} testId={`result-question-${q.id}`} className="text-sm" />}
                     {(() => {
                       const LET = ["A","B","C","D","E","F"];
                       const label = (arr) => (arr || []).map(l => {
@@ -432,6 +432,7 @@ export default function Result() {
                       );
                     })()}
                     {q?.explanation && <div className="text-xs mt-2 p-2 rounded-lg bg-muted/60">💡 <MathText>{q.explanation}</MathText></div>}
+                    {q?.explanation_image_url && <QuestionImage src={q.explanation_image_url} alt="Source solution illustration" testId={`result-solution-${q.id}`} />}
                   </div>
                 </div>
               </div>

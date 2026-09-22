@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import MathText from "@/components/MathText";
+import { QuestionContent } from "@/components/QuestionContent";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
 const FONT_STEPS = ["text-sm", "text-base", "text-lg", "text-xl"];
@@ -374,7 +375,7 @@ export default function LiveExam() {
       {/* ---------- BODY ---------- */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 grid lg:grid-cols-12 gap-4 lg:gap-6 pb-24 lg:pb-6">
         {/* main question */}
-        <div className={`${focusMode ? "lg:col-span-12" : "lg:col-span-8"}`}>
+        <div className={`min-w-0 ${focusMode ? "lg:col-span-12" : "lg:col-span-8"}`}>
           <Card className="en-card p-5 sm:p-7 en-fade-up" key={q.id}>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -382,6 +383,7 @@ export default function LiveExam() {
                 <Badge variant="outline" className="rounded-full">{q.subject}</Badge>
                 <Badge variant="outline" className="rounded-full capitalize">{q.difficulty}</Badge>
                 <Badge variant="outline" className="rounded-full">+{q.marks} / -{q.negative_marks || 0}</Badge>
+                {q.content_origin === "ai_adapted" && <Badge data-testid="exam-question-origin" variant="outline" className="rounded-full">AI-adapted practice</Badge>}
                 {q.chapter && <Badge variant="outline" className="rounded-full text-xs">{q.chapter}</Badge>}
               </div>
               <div className="flex items-center gap-2">
@@ -401,8 +403,7 @@ export default function LiveExam() {
                 </div>
               </div>
             </div>
-            <div className="leading-relaxed whitespace-pre-wrap"><MathText>{q.text}</MathText></div>
-            {q.image_url && <img src={q.image_url} alt="question" className="mt-4 rounded-xl border border-border max-h-80 object-contain" loading="lazy" />}
+            <QuestionContent question={q} testId="exam-question" className="leading-relaxed" />
             {hints[q.id] && (
               <div data-testid="hint-box" className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-500/10 p-4 flex gap-3">
                 <Lightbulb className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
@@ -438,15 +439,15 @@ export default function LiveExam() {
               )}
             </div>
             {/* action row */}
-            <div className="flex items-center justify-between mt-6 gap-2">
-              <div className="flex gap-2">
+            <div className="flex flex-wrap items-center justify-between mt-6 gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button data-testid="prev-btn" variant="outline" className="rounded-full" onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}><ChevronLeft className="h-4 w-4 mr-1" /> Prev</Button>
-                <Button variant="ghost" className="rounded-full" onClick={() => clearAnswer(q.id)}><XCircle className="h-4 w-4 mr-1" />Clear</Button>
+                <Button data-testid="clear-answer-btn" variant="ghost" className="rounded-full" onClick={() => clearAnswer(q.id)}><XCircle className="h-4 w-4 mr-1" />Clear</Button>
                 <Button data-testid="use-hint-btn" variant="outline" className="rounded-full border-amber-400/60 text-amber-600 hover:bg-amber-50" onClick={useHint} disabled={hintLoading || !!hints[q.id]}>
                   <Lightbulb className="h-4 w-4 mr-1" />{hints[q.id] ? "Hint shown" : hintLoading ? "…" : "Use hint"}
                 </Button>
               </div>
-              <Button data-testid="next-btn" className="rounded-full" onClick={() => setCurrent(c => Math.min(questions.length - 1, c + 1))} disabled={current === questions.length - 1}>
+              <Button data-testid="next-btn" className="rounded-full w-full sm:w-auto" onClick={() => setCurrent(c => Math.min(questions.length - 1, c + 1))} disabled={current === questions.length - 1}>
                 Save & next <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>

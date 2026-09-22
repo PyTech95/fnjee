@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Upload, FileSpreadsheet, FileText, FileImage, CloudDownload, CheckCircle2, AlertTriangle, ClipboardPaste, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { QuestionContent, QuestionImage } from "@/components/QuestionContent";
+import MathText from "@/components/MathText";
 
 const FORMATS = [
   { icon: FileSpreadsheet, name: "Excel", exts: ".xlsx,.xls" },
@@ -32,6 +34,7 @@ export default function ImportWizard() {
   const [committing, setCommitting] = useState(false);
   const [parsed, setParsed] = useState(null);
   const [rows, setRows] = useState([]);
+  const [importMode, setImportMode] = useState("extract");
   const nav = useNavigate();
 
   const runParse = async () => {
@@ -46,6 +49,7 @@ export default function ImportWizard() {
       if (source === "paste") fd.append("raw_text", rawText);
       fd.append("subject_default", subjectDefault);
       fd.append("use_ai", "true");
+      fd.append("import_mode", importMode);
       const r = await importApi.parse(fd);
       setParsed(r);
       setRows(r.questions.map((q) => ({ ...q, _include: true })));
@@ -62,7 +66,7 @@ export default function ImportWizard() {
   };
 
   const commit = async () => {
-    const selected = rows.filter((r) => r._include).map(({ _include, duplicate, id_tmp, ...rest }) => rest);
+    const selected = rows.filter((r) => r._include).map(({ _include, duplicate, id_tmp, ...rest }) => ({ ...rest, status: "approved" }));
     if (!selected.length) return toast.error("Select at least one question");
     setCommitting(true);
     try {
@@ -96,15 +100,15 @@ export default function ImportWizard() {
       <div>
         <div className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Import wizard</div>
         <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-tight mt-1">Bring your question paper in.</h1>
-        <p className="text-muted-foreground mt-1">Upload a file, paste text, or drop a Drive link. We extract with fast regex first — AI only kicks in when needed.</p>
+        <p data-testid="import-description" className="text-muted-foreground mt-1">Question papers & solutions · Tables, diagrams and formulas</p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         {["Upload", "Detect & parse", "Review & save"].map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div data-testid={`step-${i + 1}`} className={`h-8 w-8 rounded-full grid place-items-center text-sm font-semibold ${step >= i + 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{i + 1}</div>
-            <span className={`text-sm ${step >= i + 1 ? "text-foreground" : "text-muted-foreground"}`}>{s}</span>
-            {i < 2 && <div className="w-8 h-px bg-border ml-2" />}
+            <span className={`text-xs sm:text-sm ${step >= i + 1 ? "text-foreground" : "text-muted-foreground"}`}>{s}</span>
+            {i < 2 && <div className="hidden sm:block w-8 h-px bg-border ml-2" />}
           </div>
         ))}
       </div>
@@ -153,6 +157,16 @@ export default function ImportWizard() {
           </Tabs>
 
           <div className="grid md:grid-cols-2 gap-4">
+            {source !== "paste" && <div>
+              <Label>PDF content</Label>
+              <Select value={importMode} onValueChange={setImportMode}>
+                <SelectTrigger data-testid="import-mode"><SelectValue /></SelectTrigger>
+                <SelectContent data-testid="import-mode-menu">
+                  <SelectItem data-testid="import-mode-extract" value="extract">Extract original questions</SelectItem>
+                  <SelectItem data-testid="import-mode-adapt" value="adapt">Create adapted practice from solutions</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>}
             <div>
               <Label>Default subject</Label>
               <Select value={subjectDefault} onValueChange={setSubjectDefault}>
@@ -190,7 +204,7 @@ export default function ImportWizard() {
               <Button variant="outline" className="rounded-full" onClick={addBlankRow} data-testid="add-blank-row">
                 + Add question
               </Button>
-              <Button variant="outline" className="rounded-full" onClick={() => { setStep(1); setParsed(null); setRows([]); }}>Start over</Button>
+              <Button data-testid="import-start-over" variant="outline" className="rounded-full" onClick={() => { setStep(1); setParsed(null); setRows([]); }}>Start over</Button>
               <Button data-testid="commit-import" className="rounded-full" onClick={commit} disabled={committing || includedCount === 0}>
                 <CheckCircle2 className="h-4 w-4 mr-2" /> {committing ? "Saving…" : `Submit & save ${includedCount} question(s)`}
               </Button>
@@ -214,16 +228,19 @@ export default function ImportWizard() {
                   <input data-testid={`row-check-${i}`} type="checkbox" checked={!!r._include}
                     onChange={(e) => updateRow(i, { _include: e.target.checked })}
                     className="mt-1.5 h-4 w-4 accent-primary" />
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 min-w-0 space-y-3">
                     <div className="flex flex-wrap gap-2 items-center">
                       <Badge variant="secondary" className="rounded-full">{r.type}</Badge>
                       <Badge variant="outline" className="rounded-full">{r.subject}</Badge>
                       <Badge variant="outline" className="rounded-full">{r.difficulty}</Badge>
+                      {r.content_origin === "ai_adapted" && <Badge data-testid={`row-origin-${i}`} variant="outline">AI-adapted</Badge>}
                       {r.duplicate && <Badge className="rounded-full bg-amber-500/10 text-amber-700 border-amber-500/30" variant="outline">Duplicate</Badge>}
                       <button onClick={() => removeRow(i)} className="ml-auto text-xs text-destructive hover:underline" data-testid={`remove-row-${i}`}>Remove</button>
                     </div>
                     <Textarea data-testid={`row-text-${i}`} value={r.text}
                       onChange={(e) => updateRow(i, { text: e.target.value })} className="text-sm" rows={2} />
+                    <QuestionContent question={r} testId={`import-preview-${i}`} className="text-sm" />
+                    {r.image_url && <Button data-testid={`remove-image-${i}`} type="button" size="sm" variant="outline" onClick={() => updateRow(i, { image_url: null })}>Remove image</Button>}
                     {r.options?.length > 0 && (
                       <div className="grid sm:grid-cols-2 gap-2">
                         {r.options.map((opt, oi) => {
@@ -252,6 +269,12 @@ export default function ImportWizard() {
                       <div><b>-ve:</b> {r.negative_marks}</div>
                       {r.chapter && <div><b>Chapter:</b> {r.chapter}</div>}
                     </div>
+                    {(r.explanation || r.explanation_image_url) && <details data-testid={`import-solution-${i}`}>
+                      <summary data-testid={`import-solution-toggle-${i}`} className="cursor-pointer text-sm font-medium">Solution preview</summary>
+                      <div className="mt-3 text-sm"><MathText>{r.explanation}</MathText>
+                        <QuestionImage src={r.explanation_image_url} alt="Source solution illustration" testId={`import-solution-image-${i}`} />
+                      </div>
+                    </details>}
                   </div>
                 </div>
               </div>

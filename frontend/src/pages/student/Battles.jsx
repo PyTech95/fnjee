@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Swords, Users, Trophy, Copy, Clock, CheckCircle2, XCircle, Crown, Loader2, Plus, LogIn } from "lucide-react";
 import MathText from "@/components/MathText";
+import { QuestionContent } from "@/components/QuestionContent";
 import { toast } from "sonner";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -192,7 +193,7 @@ export default function Battles() {
         <Card className="en-card p-6 lg:col-span-2" data-testid="battle-question">
           {q ? (
             <>
-              <div className="text-base font-medium leading-relaxed"><MathText>{q.text}</MathText></div>
+              <QuestionContent question={q} testId="battle-question" className="text-base font-medium leading-relaxed" />
               <div className="mt-4 space-y-2">
                 {(q.options || []).map((opt, i) => {
                   const isSel = sel === i;

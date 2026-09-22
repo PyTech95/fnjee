@@ -1,0 +1,10 @@
+.question-rich-text { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+.question-rich-text p { margin: 0 0 .8rem; white-space: pre-wrap; }
+.question-rich-text p:last-child { margin-bottom: 0; }
+.question-table-wrap { width: 100%; max-width: 100%; margin: 1rem 0; }
+.question-table-wrap table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: .9em; background: hsl(var(--background)); }
+.question-table-wrap th, .question-table-wrap td { border: 1px solid hsl(var(--border)); padding: .75rem; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.question-table-wrap th { background: hsl(var(--muted)); font-weight: 700; }
+.question-table-wrap tbody tr:nth-child(even) { background: hsl(var(--muted) / .35); }
+.question-image { display: block; max-width: 100%; height: auto; object-fit: contain; }
+@media (max-width: 480px) { .question-table-wrap th, .question-table-wrap td { padding: .45rem; } }

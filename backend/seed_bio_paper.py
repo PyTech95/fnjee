@@ -2,6 +2,7 @@
 Plants & Human Reproduction) — 75 MCQs, with diagram images for figure-based
 questions. Idempotent: uses deterministic ids so re-running updates in place."""
 import os, json, uuid
+from biology_tables import restore_table
 from datetime import datetime, timezone
 
 _NS = uuid.uuid5(uuid.NAMESPACE_DNS, "cbse-bio-ws.examnest.io")
@@ -368,7 +369,7 @@ async def run_bio_seed(db):
             "id": qid, "type": "mcq_single", "subject": "Biology", "chapter": CHAPTER,
             "topic": "Human Reproduction / Reproduction in Flowering Plants",
             "difficulty": DIFFICULTY.get(n, "medium"), "marks": 4, "negative_marks": 1,
-            "text": text, "options": options, "correct": [correct], "explanation": expl,
+            "text": restore_table(n, text), "options": options, "correct": [correct], "explanation": expl,
             "hint": "", "language": "English",
             "image_url": IMAGES.get(str(n)), "source": SOURCE_TAG, "status": "approved",
             "exam": "CBSE", "student_class": "12", "year": "", "series": "", "tags": ["CBSE", "Class 12", "Biology"],

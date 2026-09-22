@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-22",
+  "case": "Table and image question enhancements",
+  "backend_regression": "9 passed in 26.18s; actual uploaded DPP10 solutions PDF used",
+  "dataset": {"dpp_questions": 40, "dpp_image_questions": 13, "dpp_question_tables": 9, "cbse_restored_tables": 8, "cbse_preserved_images": 17},
+  "print": {"student_copy": "PASS: 1 table, 1 diagram, 12 formula renderings, 0 answer sections", "answer_key_copy": "PASS: 2 tables, 2 diagrams, 6 answer/solution sections", "fixtures_removed": true},
+  "responsive": {"method": "Same-origin iframe browsing contexts with actual layout viewport widths; main screenshot viewport 1920x800", "widths": [320, 768, 1024, 1440], "image_question": "PASS: no horizontal page overflow", "table_question": "PASS: no horizontal page overflow"},
+  "chart_followup": "PASS: admin dashboard charts rendered with no width(-1)/height(-1) console warnings",
+  "production_build": "PASS with pre-existing hook-dependency and bundle-size warnings",
+  "mocked_integrations": [],
+  "remaining_blockers": []
+}

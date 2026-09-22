@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Gauge, CheckCircle2, XCircle, TrendingUp, TrendingDown, Loader2, Zap, RotateCcw } from "lucide-react";
 import MathText from "@/components/MathText";
+import { QuestionContent, QuestionImage } from "@/components/QuestionContent";
 import { toast } from "sonner";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -84,7 +85,7 @@ export default function Adaptive() {
           <div className="h-1.5 rounded-full bg-muted mb-5 overflow-hidden">
             <div className="h-full bg-primary transition-all" style={{ width: `${(meta.index / meta.length) * 100}%` }} />
           </div>
-          <div className="text-base font-medium leading-relaxed"><MathText>{q.text}</MathText></div>
+          <QuestionContent question={q} testId="adaptive-question" className="text-base font-medium leading-relaxed" />
           <div className="mt-4 space-y-2">
             {(q.options || []).map((opt, i) => {
               const isSel = sel === i;
@@ -111,6 +112,7 @@ export default function Adaptive() {
                   : <><TrendingDown className="h-4 w-4 text-amber-600" /> Not quite — easing to <span className="capitalize">{result.next_difficulty}</span></>}
               </div>
               {result.explanation && <div className="text-muted-foreground"><MathText>{result.explanation}</MathText></div>}
+              <QuestionImage src={result.explanation_image_url} alt="Solution illustration" testId="adaptive-solution-image" />
             </div>
           )}
 
