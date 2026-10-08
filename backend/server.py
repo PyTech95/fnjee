@@ -551,6 +551,10 @@ async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
             "answer_key_applied": answer_key_applied}
 
 
+# Keep strong refs to in-flight background import jobs so the event loop can't GC them.
+_bg_tasks: set = set()
+
+
 async def _run_import_job(job_id: str, kwargs: dict):
     """Background worker: runs the heavy parse and stores the result on the job doc."""
     try:
@@ -652,7 +656,8 @@ async def import_start(
         exam_default=exam_default, class_default=class_default, year_default=year_default,
         tags_default=tags_default, marks_default=marks_default, negative_default=negative_default,
         answer_data=answer_data, answer_ext=answer_ext, answer_text=answer_text)
-    asyncio.create_task(_run_import_job(job_id, kwargs))
+    task = asyncio.create_task(_run_import_job(job_id, kwargs))
+    _bg_tasks.add(task); task.add_done_callback(_bg_tasks.discard)
     return {"job_id": job_id, "filename": filename, "status": "processing"}
 
 
@@ -1531,8 +1536,6 @@ async def cron_weekly_digest(request: Request):
         raise HTTPException(401, "Unauthorized")
     asyncio.create_task(_run_weekly_digests())
     return {"ok": True, "status": "accepted"}
-
-
 async def _run_study_reminders():
     """Background: nudge students (at their chosen IST hour) whose streak is at risk."""
     try:

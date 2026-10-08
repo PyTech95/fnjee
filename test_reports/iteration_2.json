@@ -1,0 +1,23 @@
+{
+  "summary": "Retest of JSON-escape sanitisation fix for solutions-only PDF import. CONFIRMED: /app/tests/sample_imports/Hydrocarbons_Solutions.pdf now produces result.count=40 (previously 0) via /api/import/start -> /api/import/jobs/{id} polling, status='done', result.error=null, no 'Invalid \\escape'. DOCX regression (Hydrocarbons_Questions.docx) still returns >60 questions with batch categorisation applied, and /api/import/commit persists. All 5 pytest cases in test_import_async_job.py pass (244s).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_import_async_job.py",
+    "/app/test_reports/pytest/import_async_retest.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is still 3500+ lines — carryover from iteration_1, consider splitting into routers.",
+    "import_jobs collection still has no TTL cleanup — carryover.",
+    "asyncio.create_task for /import/start job is still unreferenced — carryover, works but risk of GC."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "n/a (not retested per request)"},
+  "test_credentials": "admin@examnest.io / Admin@123 / role=admin",
+  "seed_data_creation": "test_commit_saves_questions inserted 3 Hydrocarbons DOCX questions into questions collection (same as iteration_1).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both fixes (async job plumbing + JSON escape sanitisation in visual_pdf.py/ai_parser.py) are validated end-to-end. PDF solutions path now returns 40 adapted questions. Sample files at /app/tests/sample_imports/. Admin login requires role field. Use pytest -n 0 (pytest.ini pins -n 2).",
+  "rca of the issue": "RCA validated: visual_pdf.parse_visual_pdf and ai_parser._loads_lenient now pre-sanitise invalid backslash escapes (regex doubles '\\\\' not followed by valid escape chars) before json.loads, so AI output containing LaTeX/chemistry notation (\\sigma, \\pi, \\frac) is parseable. Hydrocarbons_Solutions.pdf path (extract -> auto-switch to adapt) completes with count=40, error=null. Chemistry notation keywords detected in 5/40 produced items confirming the LaTeX-containing content survived parsing."
+}

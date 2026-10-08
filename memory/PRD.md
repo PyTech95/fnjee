@@ -73,3 +73,10 @@ React 18 (CRA+craco, Tailwind, shadcn) → FastAPI (`server.py` + `cbt.py`) → 
 - Behaviour: any field the admin sets is applied to EVERY question in that file (overrides detected values); blank/"auto" keeps AI/regex-detected values. Import works with or without any selection.
 - Backend import_parse (server.py): new optional Form params (*_default) + override loop applied to parsed[] before answer-key/dup stages; tags merge-union. All fields persist via QuestionIn on commit.
 - Verified: API applied all 12 fields to 76 questions (HTTP 200); UI panel renders with testids cat-type/difficulty/status/chapter/topic/section/exam/class/year/tags/marks/negative.
+
+## Fix: "Unable to upload any DOC or PDF" — async import (2026-10, this session)
+- ROOT CAUSE: Emergent gateway hard-kills any single HTTP request at 60s. AI extraction of PDFs/large DOCX takes 60-130s, so the synchronous POST /api/import/parse returned 502. (On VPS/Caddy there's no 60s cap, but preview + any slow file failed.)
+- FIX (background job): POST /api/import/start returns {job_id} instantly, server runs AI in the background (_run_import_job), GET /api/import/jobs/{job_id} is polled by the frontend every 2.5s until status=done. Each HTTP request is now <1s -> no gateway timeout. Refactored shared core into _do_import_parse() + _resolve_import_inputs(); /import/parse kept for paste/sync. Background task refs held in _bg_tasks to avoid GC.
+- FIX (LaTeX JSON): solutions PDFs with chemistry/LaTeX (\sigma, \pi, \frac) produced count=0 because AI JSON had invalid backslash escapes -> json.loads 'Invalid \escape'. Added escape sanitiser (double any backslash not starting a valid JSON escape) in visual_pdf.py and ai_parser._loads_lenient (3 recovery sites).
+- Frontend: importApi.start + importApi.jobStatus; ImportWizard.runParse now starts job + pollImportJob() with 10-min ceiling.
+- VERIFIED by testing_agent iteration_1 + iteration_2 (100%, 5/5): DOCX e2e 75 Q (UI review rows + commit), solutions PDF 40 adapted Q (was 0), no 502, categorisation applied.
