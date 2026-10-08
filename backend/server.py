@@ -406,6 +406,18 @@ async def import_parse(
     import_mode: str = Form("extract"),
     answer_file: Optional[UploadFile] = File(None),
     answer_text: Optional[str] = Form(None),
+    type_default: Optional[str] = Form(None),
+    difficulty_default: Optional[str] = Form(None),
+    status_default: Optional[str] = Form(None),
+    chapter_default: Optional[str] = Form(None),
+    topic_default: Optional[str] = Form(None),
+    section_default: Optional[str] = Form(None),
+    exam_default: Optional[str] = Form(None),
+    class_default: Optional[str] = Form(None),
+    year_default: Optional[str] = Form(None),
+    tags_default: Optional[str] = Form(None),
+    marks_default: Optional[float] = Form(None),
+    negative_default: Optional[float] = Form(None),
     user: dict = Depends(require_role('admin')),
 ):
     data: bytes = b""; filename = ""; text: str = ""
@@ -474,6 +486,27 @@ async def import_parse(
                 errors.append(f"Could not extract text from .{ext} file.")
     except Exception as e:
         log.exception("parse fail"); errors.append(f"Parse error: {e}")
+
+    # ---- Batch categorisation: apply admin-chosen defaults to every question ----
+    # Only fields the admin explicitly set are applied; they override detected values.
+    _overrides: dict = {}
+    if type_default: _overrides["type"] = type_default
+    if difficulty_default in ("easy", "medium", "hard"): _overrides["difficulty"] = difficulty_default
+    if status_default in ("draft", "review", "approved", "archived"): _overrides["status"] = status_default
+    if chapter_default: _overrides["chapter"] = chapter_default
+    if topic_default: _overrides["topic"] = topic_default
+    if section_default: _overrides["section"] = section_default
+    if exam_default: _overrides["exam"] = exam_default
+    if class_default: _overrides["student_class"] = class_default
+    if year_default: _overrides["year"] = year_default
+    if marks_default is not None: _overrides["marks"] = marks_default
+    if negative_default is not None: _overrides["negative_marks"] = negative_default
+    _tags = [t.strip() for t in (tags_default or "").split(",") if t.strip()]
+    if _overrides or _tags:
+        for q in parsed:
+            q.update(_overrides)
+            if _tags:
+                q["tags"] = sorted(set((q.get("tags") or []) + _tags))
 
     # ---- Optional separate answer key (uploaded file OR pasted text) ----
     # Maps answers onto the parsed questions by order: Nth key entry -> Nth question.

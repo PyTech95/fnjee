@@ -37,6 +37,14 @@ export default function ImportWizard() {
   const [parsed, setParsed] = useState(null);
   const [rows, setRows] = useState([]);
   const [importMode, setImportMode] = useState("extract");
+  // Optional batch categorisation — applied to every imported question.
+  // Blank / "auto" means "keep what the AI detected". If set, it overrides.
+  const [cat, setCat] = useState({
+    type: "auto", difficulty: "auto", status: "approved",
+    chapter: "", topic: "", section: "", exam: "", student_class: "", year: "",
+    tags: "", marks: "", negative_marks: "",
+  });
+  const updCat = (k, v) => setCat((x) => ({ ...x, [k]: v }));
   const nav = useNavigate();
 
   const runParse = async () => {
@@ -52,6 +60,19 @@ export default function ImportWizard() {
       if (answerFile) fd.append("answer_file", answerFile);
       if (answerText.trim()) fd.append("answer_text", answerText);
       fd.append("subject_default", subjectDefault);
+      // Optional batch categorisation — only send fields the admin actually set.
+      if (cat.type && cat.type !== "auto") fd.append("type_default", cat.type);
+      if (cat.difficulty && cat.difficulty !== "auto") fd.append("difficulty_default", cat.difficulty);
+      if (cat.status) fd.append("status_default", cat.status);
+      if (cat.chapter.trim()) fd.append("chapter_default", cat.chapter.trim());
+      if (cat.topic.trim()) fd.append("topic_default", cat.topic.trim());
+      if (cat.section.trim()) fd.append("section_default", cat.section.trim());
+      if (cat.exam.trim()) fd.append("exam_default", cat.exam.trim());
+      if (cat.student_class.trim()) fd.append("class_default", cat.student_class.trim());
+      if (cat.year.trim()) fd.append("year_default", cat.year.trim());
+      if (cat.tags.trim()) fd.append("tags_default", cat.tags.trim());
+      if (String(cat.marks).trim() !== "") fd.append("marks_default", cat.marks);
+      if (String(cat.negative_marks).trim() !== "") fd.append("negative_default", cat.negative_marks);
       fd.append("use_ai", "true");
       fd.append("import_mode", importMode);
       const r = await importApi.parse(fd);
@@ -215,6 +236,63 @@ export default function ImportWizard() {
                   <SelectItem value="Biology">Biology</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3" data-testid="import-categorise-block">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <Label className="text-sm font-semibold">Categorise imported questions <span className="text-muted-foreground font-normal">(optional) — anything you set here is applied to every question in this file. Leave blank to keep what's detected.</span></Label>
+            </div>
+            <div className="grid md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Type</Label>
+                <Select value={cat.type} onValueChange={(v) => updCat("type", v)}>
+                  <SelectTrigger data-testid="cat-type"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto (detect)</SelectItem>
+                    <SelectItem value="mcq_single">MCQ (single)</SelectItem>
+                    <SelectItem value="mcq_multi">MCQ (multi)</SelectItem>
+                    <SelectItem value="true_false">True/False</SelectItem>
+                    <SelectItem value="integer">Integer</SelectItem>
+                    <SelectItem value="assertion_reason">Assertion-Reason</SelectItem>
+                    <SelectItem value="subjective">Subjective</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Difficulty</Label>
+                <Select value={cat.difficulty} onValueChange={(v) => updCat("difficulty", v)}>
+                  <SelectTrigger data-testid="cat-difficulty"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto (detect)</SelectItem>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Status</Label>
+                <Select value={cat.status} onValueChange={(v) => updCat("status", v)}>
+                  <SelectTrigger data-testid="cat-status"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Chapter</Label><Input data-testid="cat-chapter" value={cat.chapter} onChange={(e) => updCat("chapter", e.target.value)} placeholder="e.g. Hydrocarbons" /></div>
+              <div><Label className="text-xs">Topic</Label><Input data-testid="cat-topic" value={cat.topic} onChange={(e) => updCat("topic", e.target.value)} placeholder="e.g. Alkanes" /></div>
+              <div><Label className="text-xs">Section</Label><Input data-testid="cat-section" value={cat.section} onChange={(e) => updCat("section", e.target.value)} placeholder="e.g. Section A" /></div>
+              <div><Label className="text-xs">Exam</Label><Input data-testid="cat-exam" value={cat.exam} onChange={(e) => updCat("exam", e.target.value)} placeholder="e.g. NEET / JEE" /></div>
+              <div><Label className="text-xs">Class</Label><Input data-testid="cat-class" value={cat.student_class} onChange={(e) => updCat("student_class", e.target.value)} placeholder="e.g. 11" /></div>
+              <div><Label className="text-xs">Year</Label><Input data-testid="cat-year" value={cat.year} onChange={(e) => updCat("year", e.target.value)} placeholder="e.g. 2025" /></div>
+              <div><Label className="text-xs">Tags <span className="text-muted-foreground">(comma-sep)</span></Label><Input data-testid="cat-tags" value={cat.tags} onChange={(e) => updCat("tags", e.target.value)} placeholder="e.g. pyq, important" /></div>
+              <div><Label className="text-xs">Marks</Label><Input data-testid="cat-marks" type="number" step="0.5" value={cat.marks} onChange={(e) => updCat("marks", e.target.value)} placeholder="keep" /></div>
+              <div><Label className="text-xs">Negative</Label><Input data-testid="cat-negative" type="number" step="0.5" value={cat.negative_marks} onChange={(e) => updCat("negative_marks", e.target.value)} placeholder="keep" /></div>
             </div>
           </div>
 

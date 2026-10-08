@@ -67,3 +67,9 @@ React 18 (CRA+craco, Tailwind, shadcn) → FastAPI (`server.py` + `cbt.py`) → 
   4. Hardened gemini response parse for missing 'parts'/'candidates' (thinking models).
 - Verified end-to-end through PUBLIC gateway + admin UI: Hydrocarbons WS.docx -> 76 questions detected with options+answers+subscripts. Chemistry "Solution" PDFs are answer-keys (no stems) -> correctly detected document_kind=solutions, auto-adapt yields practice Qs; use them in the Answer-key slot alongside the DOCX.
 - NOTE for VPS: code fixes live in ai_chat.py + ai_parser.py (port with repo). Gemini key is DB-stored -> re-enter in Admin → AI Settings on the fresh VPS DB. A reboot alone does NOT fix the upload; the code changes do.
+
+## Feature: Batch categorisation in Import Wizard (2026-10, this session)
+- Added "Categorise imported questions (optional)" panel to Import Wizard step 1 (ImportWizard.jsx): Type, Difficulty, Status, Chapter, Topic, Section, Exam, Class, Year, Tags (comma-sep), Marks, Negative.
+- Behaviour: any field the admin sets is applied to EVERY question in that file (overrides detected values); blank/"auto" keeps AI/regex-detected values. Import works with or without any selection.
+- Backend import_parse (server.py): new optional Form params (*_default) + override loop applied to parsed[] before answer-key/dup stages; tags merge-union. All fields persist via QuestionIn on commit.
+- Verified: API applied all 12 fields to 76 questions (HTTP 200); UI panel renders with testids cat-type/difficulty/status/chapter/topic/section/exam/class/year/tags/marks/negative.
