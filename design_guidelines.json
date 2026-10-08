@@ -1,0 +1,162 @@
+{
+  "project_context": {
+    "name": "Mock Test Club (ExamNest)",
+    "type": "Marketing Landing Page",
+    "goal": "High-conversion, heavily animated, non-generic AI slop redesign keeping all existing functionality and data fetching intact."
+  },
+  "theme_strategy": {
+    "archetype": "The Performance Pro meets Swiss Brutalism",
+    "vibe": "High-stakes, authoritative, energetic, focused.",
+    "theme_mode": "light",
+    "rationale": "Indian competitive exams (NEET/JEE) require intense focus and high energy. We reject generic 'SaaS blue' and soft pastels. Instead, we use high-contrast brutalist structures to convey authority, paired with vivid 'Volt' accents to convey kinetic energy. We retain the warm cream base (#FAF7F2) to keep the app grounded and approachable."
+  },
+  "typography": {
+    "font_families": {
+      "heading": "Clash Display, sans-serif",
+      "body": "Satoshi, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "font_imports": [
+      "@import url('https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@400,500,700&display=swap');",
+      "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');"
+    ],
+    "rules": {
+      "h1": "text-5xl md:text-6xl+ font-bold tracking-tighter leading-[1.1]",
+      "h2": "text-4xl md:text-5xl font-semibold tracking-tight",
+      "body": "text-base md:text-lg leading-relaxed text-gray-800",
+      "labels": "uppercase text-xs tracking-[0.2em] font-bold text-gray-500",
+      "banned_fonts": ["Inter", "Roboto", "Open Sans", "Lato for headings"]
+    }
+  },
+  "colors": {
+    "background": {
+      "primary": "#FAF7F2",
+      "secondary": "#FFFFFF",
+      "accent_container": "#0F172A"
+    },
+    "text": {
+      "primary": "#09090B",
+      "secondary": "#52525B",
+      "inverse": "#FAF7F2"
+    },
+    "brand": {
+      "primary": "#FF3B30",
+      "primary_hover": "#D92D24",
+      "accent": "#4338CA"
+    },
+    "borders": {
+      "default": "rgba(9, 9, 11, 0.1)",
+      "dark": "rgba(250, 247, 242, 0.15)"
+    },
+    "rules": {
+      "contrast": "Ensure APCA contrast ratio. Never use pure #000000. Never use full transparent backgrounds for nav."
+    }
+  },
+  "layout_and_spacing": {
+    "spacing_scale": "Generous Spacing: p-8, p-12, p-16, py-24, py-32.",
+    "grid_system": {
+      "bento_mode_a": "Base Grid: grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8. Span logic: Hero/Dominant (col-span-8 row-span-2), Square (col-span-4 row-span-1).",
+      "alignment": "Mobile-first, optical alignment, aggressive asymmetry."
+    }
+  },
+  "surfaces_and_components": {
+    "cards": {
+      "override_en_card": "Redefine existing 'en-card' style to: Neumorphic-brutalist hybrid: Flat backgrounds matching parent, sharp 1px border (#09090B/10), crisp layered shadows for hover (-translate-y-1, shadow-[4px_4px_0px_0px_rgba(9,9,11,1)])."
+    },
+    "glassmorphism": {
+      "style": "Optical Clarity for Nav/Sticky elements: bg-white/70, backdrop-blur-xl, backdrop-saturate-150, 1px bottom border border-black/5."
+    },
+    "buttons": {
+      "primary": "bg-[#FF3B30] text-white font-semibold rounded-full px-8 py-4 hover:bg-[#D92D24] transition-transform hover:scale-105 active:scale-95 shadow-[0_4px_14px_0_rgb(255,59,48,39%)]",
+      "secondary": "bg-transparent text-[#09090B] border border-[#09090B]/20 rounded-full px-8 py-4 hover:border-[#09090B] hover:bg-black/5 transition-all"
+    }
+  },
+  "motion_and_interactions": {
+    "libraries": ["framer-motion", "lucide-react"],
+    "scroll": "Smooth scrolling via Lenis (or Framer Motion scroll hooks) is highly recommended for premium feel.",
+    "micro_interactions": {
+      "hover": "Scale transforms, layered shadow reveals, border color shifts.",
+      "entrance": "Upgrade 'en-fade-up' to use framer-motion staggering. Spring physics: stiffness 100, damping 15."
+    },
+    "specific_effects": {
+      "hero_parallax": "Images/elements in hero move at different scroll speeds.",
+      "marquee": "Slow, elegant drift for logos. Use framer-motion infinite translate.",
+      "stats": "Animated counter triggered by intersection observer."
+    }
+  },
+  "sections_breakdown": {
+    "nav": {
+      "design": "Sticky top, Crystal Glassmorphism, clearly visible logo and main CTA."
+    },
+    "hero": {
+      "layout": "Asymmetric. Left: Massive H1 + Subtitle + CTAs + Batch Toggle (Segmented control UI). Right: Overlapping Framer Motion dashboard mockup card ('en-card') and abstract student visuals.",
+      "motion": "Staggered entrance. Mockup card floats slightly (y-axis ping-pong). Override 'en-grid-bg' for a crisp technical grid behind."
+    },
+    "media_strip": {
+      "design": "Marquee containing sponsor/featured logos, grayscale, opacity-60 hover:opacity-100."
+    },
+    "stats_strip": {
+      "design": "Dark background (#0F172A), bright text (#FAF7F2) and Accent (#FF3B30). Grid of 3 counters.",
+      "motion": "Animated numbers incrementing on scroll-in."
+    },
+    "cbt_preview": {
+      "design": "MUST mimic NTA exam colors exactly for functional recognition (Green=Answered, Red=Not Answered, Purple=Review, etc.), but elevate the container UI with glassmorphism or sleek technical borders (Retro-Futurism/Terminal look with 1px grid borders).",
+      "interaction": "Interactive mock-buttons for question palette (hover states, click ripple)."
+    },
+    "features_bento": {
+      "layout": "Mode A (Tetris Grid). 6 modules. 1 dominant (col-span-8), 2 squares, 1 tall. Varied bg colors.",
+      "design": "Crisp borders, generous padding (p-8 or p-12). Lucide-react icons with stroke-width 1.5."
+    },
+    "courses_grid": {
+      "design": "Live fetched data. Cards with crisp hover shadows. Prominent price/rating.",
+      "action": "Maintain existing API calls (/api/courses). CTAs clearly visible."
+    },
+    "toppers_grid": {
+      "design": "Tight grid, bold AIR ranks in accent color, small student avatars.",
+      "motion": "Staggered fade up."
+    },
+    "counselling_form": {
+      "design": "High-contrast card. Side-by-side layout: Form on left, live-chat mock visual on right. Shadcn Form components heavily styled.",
+      "action": "Maintain POST to /api/counselling."
+    },
+    "faq": {
+      "design": "Clean accordion, sharp borders, large typography. No boxes, just lines (border-b border-[#09090B]/10)."
+    },
+    "footer": {
+      "design": "Dark mode (#0F172A) to create massive contrast shift. Massive text element 'ACE THE EXAM'. py-24."
+    }
+  },
+  "image_urls": {
+    "hero_student": {
+      "url": "https://images.pexels.com/photos/16504588/pexels-photo-16504588.jpeg",
+      "description": "Focused young woman studying, representing the target aspirant demographic.",
+      "category": "Hero Section Mockup Background"
+    },
+    "hero_abstract": {
+      "url": "https://images.pexels.com/photos/34165104/pexels-photo-34165104.png",
+      "description": "Creative geometric shape, use as floating element behind hero mockup.",
+      "category": "Hero Background Floating Element"
+    },
+    "bento_abstract": {
+      "url": "https://images.pexels.com/photos/26559577/pexels-photo-26559577.jpeg",
+      "description": "Vibrant abstract shapes, place inside one of the bento boxes to add visual flair.",
+      "category": "Features Bento Graphic"
+    }
+  },
+  "accessibility": {
+    "contrast": "All text must pass APCA/WCAG AA.",
+    "motion": "Respect prefers-reduced-motion media query. Use framer-motion useReducedMotion hook.",
+    "testing": "All interactive elements MUST have data-testid attributes (e.g., data-testid='enroll-button')."
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Prioritize optical alignment over strict geometric alignment.",
+    "Do NOT use HTML-based generic components for complex interactions; heavily style Radix/Shadcn UI.",
+    "Do NOT apply global transition: all.",
+    "Never center-align large blocks of text; keep left-aligned for readability.",
+    "Ensure all API integrations (courses, counselling) remain completely intact and functional.",
+    "Use Lucide-react for iconography, maintaining a consistent stroke width.",
+    "For shadows, use crisp brutalist styles (e.g., shadow-[4px_4px_0_0_#000]) or highly diffused premium shadows. No default generic grays.",
+    "Do NOT use placeholder images from dummyimage/placeholder.com. Use provided image URLs.",
+    "Add 'data-testid' to all buttons, links, and forms for automation support."
+  ]
+}

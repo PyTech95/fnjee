@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /student/
+Disallow: /admin/
+Disallow: /teacher/
+Disallow: /parent/
+Disallow: /api/
+
+Sitemap: https://hardened-quiz-app.preview.emergentagent.com/sitemap.xml
