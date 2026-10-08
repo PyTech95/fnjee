@@ -58,7 +58,8 @@ async def _gemini(key, model, system, text, files, max_tokens):
         parts.append({"inline_data": {"mime_type": "application/pdf", "data": _pdf_b64(p)}})
     body = {"system_instruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": parts}],
-            "generationConfig": {"maxOutputTokens": max_tokens}}
+            "generationConfig": {"maxOutputTokens": max_tokens,
+                                 "thinkingConfig": {"thinkingLevel": "low"}}}
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
         r = await c.post(url, headers={"x-goog-api-key": key}, json=body)

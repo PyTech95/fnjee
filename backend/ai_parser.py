@@ -27,7 +27,7 @@ Rules:
 
 
 MAX_CHUNK = 9000  # smaller chunks give better recall from Gemini
-MAX_PARALLEL = 1  # Emergent LLM key single-request tier — go sequential
+MAX_PARALLEL = 5  # own-key direct API allows concurrent calls — run chunks in parallel
 CHUNK_RETRIES = 2
 
 from ai_key import resolve as _ai_resolve
@@ -74,7 +74,7 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
     raw = ""
     for attempt in range(CHUNK_RETRIES):
         try:
-            raw = await ai_complete(SYSTEM_EXTRACT, prompt)
+            raw = await ai_complete(SYSTEM_EXTRACT, prompt, max_tokens=32768)
             break
         except Exception as e:
             msg = str(e)
@@ -98,7 +98,9 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
         except Exception:
             pass
 
-    # 2) Find every balanced [...] block and pick the one with the most items
+    # 2) Find every balanced [...] block of OBJECTS and pick the one with the most items.
+    #    (Require dict elements so we never latch onto an inner options array of strings
+    #    when the outer array was truncated by a token limit.)
     best: list = []
     depth = 0; start = -1
     for i, ch in enumerate(raw):
@@ -111,7 +113,9 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
                 block = raw[start:i + 1]
                 try:
                     val = json.loads(block)
-                    if isinstance(val, list) and len(val) > len(best):
+                    if (isinstance(val, list) and val
+                            and all(isinstance(x, dict) for x in val)
+                            and len(val) > len(best)):
                         best = val
                 except Exception:
                     pass
