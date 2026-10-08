@@ -1,0 +1,38 @@
+{
+  "summary": "Verified the async import background-job fix. Backend: POST /api/import/start returns job_id in <2s (not blocking 60s), GET /api/import/jobs/{id} polls to 'done'. DOCX end-to-end extraction returned 75 questions with batch categorisation (chapter=Hydrocarbons, difficulty=hard, tags=pyq+important) correctly applied; /import/commit persisted questions. Frontend /admin/import workflow completed: parse-btn triggered the async job, review-row-0 appeared after ~55s, 75 review rows rendered, 'Detected 75 question(s) (AI-assisted)' toast displayed, Chapter: Hydrocarbons applied per question. One failure: the sample Solutions PDF (import_mode=extract with solutions auto-switch to adapt) returned count=0 with a 'Invalid \\escape' JSON parse error from the AI — the async-job plumbing is fine, but the adapt-mode AI output is unparseable for this PDF.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/import/start (PDF solutions, auto-switch to adapt)", "issue": "Sample Hydrocarbons_Solutions.pdf completes job with status='done' but result.count=0. Errors returned: [\"This PDF contains solutions, not the original questions...\", \"Parse error: Invalid \\\\escape: line 1 column 3507 (char 3506)\"]. The auto-switch extract->adapt fires but the AI response contains an invalid backslash escape so JSON decoding fails and no adapted practice questions are produced. ai_parser JSON recovery does not sanitise raw backslashes before loading."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_import_async_job.py",
+    "/app/test_reports/pytest/import_async.xml"
+  ],
+  "action_items": [
+    "Harden ai_parser JSON recovery for adapt-mode outputs: strip/escape stray backslashes (or ask the model again) so Hydrocarbons_Solutions.pdf (and similar solution-only PDFs) actually produce the ~40 adapted practice questions instead of count=0.",
+    "Optional: when auto-switching extract->adapt and adapt also fails, bubble a user-friendlier error than 'Invalid \\escape' to the UI."
+  ],
+  "critical_code_review_comments": [
+    "server.py _do_import_parse auto-switch (line ~434) depends on parse_visual_pdf+AI succeeding on second pass; add a final fallback or at least surface a clearer failure (currently user sees count=0 and the raw 'Invalid \\escape' line).",
+    "import_jobs collection grows unbounded — no TTL / cleanup for completed jobs; consider a TTL index or periodic sweep.",
+    "/api/import/start uses asyncio.create_task without storing a reference; if the loop GC's the task mid-run it could silently drop. Fine today but worth tracking in a background-task registry.",
+    "server.py is 3533 lines — well over the 700-line guideline; split import/exam/live-class modules into routers for maintainability."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_import_async_job.py (new)"
+  ],
+  "success_rate": {"backend": "80% (4/5 async-job tests)", "frontend": "100% (DOCX e2e)"},
+  "test_credentials": "admin@examnest.io / Admin@123 / role=admin (role required). Login UI uses role tabs (Student/Teacher/Parent/Admin) and 'Sign in' button, not a <select>.",
+  "seed_data_creation": "test_commit_saves_questions inserted 3 questions tagged chapter=Hydrocarbons into questions collection (via /api/import/commit); safe to leave or clean up by chapter filter.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The async-job fix for the 60s gateway timeout is confirmed working for text/DOCX inputs. If retesting the PDF path after an AI parser fix, use /app/tests/sample_imports/Hydrocarbons_Solutions.pdf with subject_default=Chemistry and either import_mode=extract (will auto-switch) or import_mode=adapt; expected ~40 adapted questions. Difficulty select in the UI (cat-difficulty) is a shadcn <button role='combobox'> — Playwright page.fill will fail; use click + option. Backend assertion of difficulty applied through form field already covered by API test. Use `pytest -n 0` because /app/backend/pytest.ini pins -n 2.",
+  "rca of the issue": "AI import 60s 502: Fix validated — /api/import/start returns in <2s and the async worker + /api/import/jobs/{id} polling bypasses the Emergent 60s gateway cap. DOCX extraction takes ~45-55s end-to-end and succeeds. Residual issue: for solutions-only PDFs the extract->adapt auto-switch invokes the AI again, but the AI's JSON output contains an unescaped backslash and `json.loads` raises 'Invalid \\escape', producing count=0. Mitigation for next iteration: in ai_parser.ai_extract_questions, pre-sanitise the JSON string (replace `\\\\` not followed by a valid escape with `\\\\\\\\`, or use a regex-based fixer / json5), or add a retry prompt."
+}

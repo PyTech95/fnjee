@@ -109,7 +109,12 @@ async def parse_visual_pdf(data, subject="Biology", mode="extract"):
                 async with asyncio.timeout(240):
                     out = await ai_complete(SYSTEM, instruction, file_paths=[path], max_tokens=32768)
                 raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", out.strip())
-                result=json.loads(raw)
+                try:
+                    result = json.loads(raw)
+                except json.JSONDecodeError:
+                    # AI often emits raw LaTeX/chemistry backslashes (\sigma, \pi, \frac)
+                    # that aren't valid JSON escapes. Double any invalid backslash and retry.
+                    result = json.loads(re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', raw))
         finally:
             if path and os.path.exists(path): os.unlink(path)
         warnings=[str(w) for w in result.get("warnings", [])]

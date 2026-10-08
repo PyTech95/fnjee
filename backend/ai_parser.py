@@ -67,6 +67,22 @@ def _split_chunks(text: str, size: int = MAX_CHUNK) -> List[str]:
     return chunks
 
 
+def _sanitize_json(s: str) -> str:
+    """Repair the #1 cause of json.loads failures on AI output: LaTeX / chemistry
+    backslashes like \\sigma, \\pi, \\frac that aren't valid JSON escapes. Any backslash
+    not starting a valid escape (\" \\ / b f n r t u) is doubled so it survives decoding."""
+    return re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', s)
+
+
+def _loads_lenient(s: str):
+    """json.loads, but retry once with escape sanitisation before giving up."""
+    try:
+        return json.loads(s)
+    except Exception:
+        return json.loads(_sanitize_json(s))
+
+
+
 async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, key: str) -> Tuple[list, list]:
     """One AI call for one chunk. Handles retries on rate-limit and multiple JSON arrays."""
     errors: list = []
@@ -93,7 +109,7 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
     # 1) Try parsing whole response as JSON array
     if raw.startswith("["):
         try:
-            items = json.loads(raw)
+            items = _loads_lenient(raw)
             if isinstance(items, list): return items, errors
         except Exception:
             pass
@@ -112,7 +128,7 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
             if depth == 0 and start >= 0:
                 block = raw[start:i + 1]
                 try:
-                    val = json.loads(block)
+                    val = _loads_lenient(block)
                     if (isinstance(val, list) and val
                             and all(isinstance(x, dict) for x in val)
                             and len(val) > len(best)):
@@ -134,7 +150,7 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
             if depth == 0 and start >= 0:
                 block = raw[start:i + 1]
                 try:
-                    val = json.loads(block)
+                    val = _loads_lenient(block)
                     if isinstance(val, dict): objs.append(val)
                 except Exception:
                     pass
