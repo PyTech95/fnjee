@@ -20,7 +20,7 @@ log = logging.getLogger("aichat")
 # (gpt-5.4-mini, gemini-3-flash-preview) do not exist on the public APIs.
 OWN_DEFAULT_MODEL = {
     "openai": "gpt-4.1-mini",
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.8-flash",
     "anthropic": "claude-haiku-4-5-20251001",
 }
 
@@ -65,7 +65,14 @@ async def _gemini(key, model, system, text, files, max_tokens):
     if r.status_code != 200:
         _fail("Gemini", r)
     d = r.json()
-    return "".join(pt.get("text", "") for pt in d["candidates"][0]["content"]["parts"])
+    cands = d.get("candidates") or []
+    if not cands:
+        raise RuntimeError(f"Gemini returned no candidates (finishReason={d.get('promptFeedback')})")
+    parts = (cands[0].get("content") or {}).get("parts") or []
+    text_out = "".join(pt.get("text", "") for pt in parts)
+    if not text_out and cands[0].get("finishReason") == "MAX_TOKENS":
+        raise RuntimeError("Gemini hit MAX_TOKENS before emitting text; increase max_tokens.")
+    return text_out
 
 
 async def _anthropic(key, model, system, text, files, max_tokens):

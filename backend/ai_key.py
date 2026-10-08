@@ -13,7 +13,7 @@ log = logging.getLogger("aikey")
 PROVIDERS = {
     "emergent": ("gemini", "gemini-3-flash-preview"),
     "openai": ("openai", "gpt-4.1-mini"),
-    "gemini": ("gemini", "gemini-2.5-flash"),
+    "gemini": ("gemini", "gemini-3.8-flash"),
     "claude": ("anthropic", "claude-haiku-4-5-20251001"),
 }
 
