@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime, timezone, timedelta
-import os, uuid, logging, jwt, bcrypt, random, string, re, traceback
+import os, uuid, logging, jwt, bcrypt, random, string, re, traceback, asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -395,35 +395,11 @@ async def delete_question(qid: str, user: dict = Depends(require_role('admin')))
     return {"ok": True}
 
 
-@api.post("/import/parse")
-async def import_parse(
-    file: Optional[UploadFile] = File(None),
-    drive_url: Optional[str] = Form(None),
-    file_type_hint: Optional[str] = Form(None),
-    subject_default: Optional[str] = Form("Physics"),
-    raw_text: Optional[str] = Form(None),
-    use_ai: Optional[bool] = Form(True),
-    import_mode: str = Form("extract"),
-    answer_file: Optional[UploadFile] = File(None),
-    answer_text: Optional[str] = Form(None),
-    type_default: Optional[str] = Form(None),
-    difficulty_default: Optional[str] = Form(None),
-    status_default: Optional[str] = Form(None),
-    chapter_default: Optional[str] = Form(None),
-    topic_default: Optional[str] = Form(None),
-    section_default: Optional[str] = Form(None),
-    exam_default: Optional[str] = Form(None),
-    class_default: Optional[str] = Form(None),
-    year_default: Optional[str] = Form(None),
-    tags_default: Optional[str] = Form(None),
-    marks_default: Optional[float] = Form(None),
-    negative_default: Optional[float] = Form(None),
-    user: dict = Depends(require_role('admin')),
-):
-    data: bytes = b""; filename = ""; text: str = ""
+async def _resolve_import_inputs(file, drive_url, file_type_hint, raw_text):
+    """Normalise the three upload sources into (data, filename, ext, text)."""
+    data: bytes = b""; filename = ""; text: str = ""; ext = ""
     if raw_text:
-        text = raw_text.strip(); filename = "pasted-text.txt"
-        ext = "txt"
+        text = raw_text.strip(); filename = "pasted-text.txt"; ext = "txt"
     elif drive_url:
         data, filename = await download_google_drive(drive_url)
         ext = (file_type_hint or filename.split(".")[-1] or "").lower()
@@ -432,7 +408,19 @@ async def import_parse(
         ext = (file_type_hint or filename.split(".")[-1] or "").lower()
     else:
         raise HTTPException(400, "Provide file, drive_url or raw_text")
+    return data, filename, ext, text
 
+
+async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
+                           use_ai: bool, import_mode: str, subject_default: str,
+                           type_default=None, difficulty_default=None, status_default=None,
+                           chapter_default=None, topic_default=None, section_default=None,
+                           exam_default=None, class_default=None, year_default=None,
+                           tags_default=None, marks_default=None, negative_default=None,
+                           answer_data: Optional[bytes] = None, answer_ext: str = "",
+                           answer_text: Optional[str] = None) -> dict:
+    """Heavy lifting for an import: AI/regex extraction, categorisation, answer-key, dedupe.
+    Pure bytes in → result dict out, so it can run synchronously OR in a background job."""
     if import_mode not in ("extract", "adapt"):
         raise HTTPException(400, "Choose extract or adapt mode")
     if import_mode == "adapt" and ext != "pdf":
@@ -440,13 +428,9 @@ async def import_parse(
     parsed: List[dict] = []; errors: List[str] = []; used_ai = False; used_regex = False
     document_kind = "questions"
     try:
-        # 1) Excel is structured — go straight to Excel parser
         if ext == "pdf" and use_ai:
             parsed, errors, document_kind = await parse_visual_pdf(data, subject_default or "Physics", import_mode)
             used_ai = True
-            # A solutions-only PDF has no original questions to extract. Automatically
-            # generate adapted practice questions so this kind of upload just works,
-            # instead of returning an empty result that looks like a failure.
             if import_mode == "extract" and document_kind == "solutions" and not parsed:
                 log.info("solutions-only PDF detected in extract mode; auto-switching to adapt")
                 parsed, adapt_warns, document_kind = await parse_visual_pdf(data, subject_default or "Physics", "adapt")
@@ -454,7 +438,6 @@ async def import_parse(
         elif ext in ("xlsx", "xls"):
             parsed, errors = parse_excel(data)
         else:
-            # 2) Extract plain text from the source
             if not text:
                 if ext == "docx":
                     text = parse_docx(data)
@@ -467,16 +450,12 @@ async def import_parse(
                     except Exception: text = ""
 
             if text and len(text) >= 30:
-                # 3) Regex-first — always try the deterministic path
                 parsed, warns = regex_extract_questions(text, subject_default or "Physics")
                 errors.extend(warns)
                 used_regex = bool(parsed)
-
-                # 4) Only fall back to AI when regex found little AND user wants AI
                 if len(parsed) < 3 and use_ai:
                     ai_parsed, ai_errs = await ai_extract_questions(text, subject_default or "Physics")
                     errors.extend(ai_errs); used_ai = True
-                    # merge & dedupe by first 120 chars of question text
                     seen = {re.sub(r"\s+", " ", (q.get("text") or "").lower())[:120] for q in parsed}
                     for q in ai_parsed:
                         sig = re.sub(r"\s+", " ", (q.get("text") or "").lower())[:120]
@@ -488,7 +467,6 @@ async def import_parse(
         log.exception("parse fail"); errors.append(f"Parse error: {e}")
 
     # ---- Batch categorisation: apply admin-chosen defaults to every question ----
-    # Only fields the admin explicitly set are applied; they override detected values.
     _overrides: dict = {}
     if type_default: _overrides["type"] = type_default
     if difficulty_default in ("easy", "medium", "hard"): _overrides["difficulty"] = difficulty_default
@@ -509,29 +487,25 @@ async def import_parse(
                 q["tags"] = sorted(set((q.get("tags") or []) + _tags))
 
     # ---- Optional separate answer key (uploaded file OR pasted text) ----
-    # Maps answers onto the parsed questions by order: Nth key entry -> Nth question.
     answer_key_applied = 0
     akey_text = (answer_text or "").strip()
-    if not akey_text and answer_file is not None:
+    if not akey_text and answer_data:
         try:
-            adata = await answer_file.read()
-            aname = answer_file.filename or "answer-key"
-            aext = (aname.split(".")[-1] or "").lower()
-            if aext == "docx":
-                akey_text = parse_docx(adata)
-            elif aext == "pdf":
-                akey_text = parse_pdf(adata)
-            elif aext in ("xlsx", "xls"):
+            if answer_ext == "docx":
+                akey_text = parse_docx(answer_data)
+            elif answer_ext == "pdf":
+                akey_text = parse_pdf(answer_data)
+            elif answer_ext in ("xlsx", "xls"):
                 from openpyxl import load_workbook
                 import io as _io
-                wb = load_workbook(_io.BytesIO(adata), data_only=True)
+                wb = load_workbook(_io.BytesIO(answer_data), data_only=True)
                 cells = []
                 for ws in wb.worksheets:
                     for row in ws.iter_rows(values_only=True):
                         cells.append(" ".join("" if c is None else str(c) for c in row))
                 akey_text = "\n".join(cells)
             else:
-                akey_text = adata.decode("utf-8", errors="ignore")
+                akey_text = answer_data.decode("utf-8", errors="ignore")
         except Exception as e:
             errors.append(f"Answer file could not be read: {e}")
     if akey_text:
@@ -539,8 +513,6 @@ async def import_parse(
             from regex_extractor import _extract_answer_key
             key_map = _extract_answer_key(akey_text)
             if key_map:
-                # The uploaded/pasted key is authoritative — overwrite any
-                # AI-guessed answers so the admin's key always wins.
                 for i, q in enumerate(parsed, start=1):
                     if i in key_map:
                         q["correct"] = [key_map[i]]
@@ -570,8 +542,6 @@ async def import_parse(
             hint = None
         if hint: errors.insert(0, hint)
 
-    # When questions were ultimately found (often via AI fallback), drop the
-    # regex-stage "nothing detected" warnings so the banner isn't contradictory.
     if len(parsed) > 0:
         _noise = ("no numbered questions detected", "empty document", "no valid question blocks")
         errors = [e for e in errors if not any(n in (e or "").lower() for n in _noise)]
@@ -579,6 +549,120 @@ async def import_parse(
     return {"filename": filename, "file_type": ext, "used_ai": used_ai, "used_regex": used_regex,
             "count": len(parsed), "questions": parsed, "errors": errors, "document_kind": document_kind,
             "answer_key_applied": answer_key_applied}
+
+
+async def _run_import_job(job_id: str, kwargs: dict):
+    """Background worker: runs the heavy parse and stores the result on the job doc."""
+    try:
+        result = await _do_import_parse(**kwargs)
+        await db.import_jobs.update_one({"id": job_id},
+            {"$set": {"status": "done", "result": result, "finished_at": now_iso()}})
+    except HTTPException as he:
+        await db.import_jobs.update_one({"id": job_id},
+            {"$set": {"status": "error", "error": he.detail, "finished_at": now_iso()}})
+    except Exception as e:
+        log.exception("import job failed")
+        await db.import_jobs.update_one({"id": job_id},
+            {"$set": {"status": "error", "error": str(e), "finished_at": now_iso()}})
+
+
+@api.post("/import/parse")
+async def import_parse(
+    file: Optional[UploadFile] = File(None),
+    drive_url: Optional[str] = Form(None),
+    file_type_hint: Optional[str] = Form(None),
+    subject_default: Optional[str] = Form("Physics"),
+    raw_text: Optional[str] = Form(None),
+    use_ai: Optional[bool] = Form(True),
+    import_mode: str = Form("extract"),
+    answer_file: Optional[UploadFile] = File(None),
+    answer_text: Optional[str] = Form(None),
+    type_default: Optional[str] = Form(None),
+    difficulty_default: Optional[str] = Form(None),
+    status_default: Optional[str] = Form(None),
+    chapter_default: Optional[str] = Form(None),
+    topic_default: Optional[str] = Form(None),
+    section_default: Optional[str] = Form(None),
+    exam_default: Optional[str] = Form(None),
+    class_default: Optional[str] = Form(None),
+    year_default: Optional[str] = Form(None),
+    tags_default: Optional[str] = Form(None),
+    marks_default: Optional[float] = Form(None),
+    negative_default: Optional[float] = Form(None),
+    user: dict = Depends(require_role('admin')),
+):
+    """Synchronous parse (kept for pasted text / quick jobs). For files that need AI,
+    the frontend uses /import/start + /import/jobs to dodge the 60s gateway timeout."""
+    data, filename, ext, text = await _resolve_import_inputs(file, drive_url, file_type_hint, raw_text)
+    answer_data = None; answer_ext = ""
+    if answer_file is not None:
+        answer_data = await answer_file.read()
+        answer_ext = ((answer_file.filename or "").split(".")[-1] or "").lower()
+    return await _do_import_parse(
+        data=data, filename=filename, ext=ext, text=text, use_ai=bool(use_ai),
+        import_mode=import_mode, subject_default=subject_default or "Physics",
+        type_default=type_default, difficulty_default=difficulty_default, status_default=status_default,
+        chapter_default=chapter_default, topic_default=topic_default, section_default=section_default,
+        exam_default=exam_default, class_default=class_default, year_default=year_default,
+        tags_default=tags_default, marks_default=marks_default, negative_default=negative_default,
+        answer_data=answer_data, answer_ext=answer_ext, answer_text=answer_text)
+
+
+@api.post("/import/start")
+async def import_start(
+    file: Optional[UploadFile] = File(None),
+    drive_url: Optional[str] = Form(None),
+    file_type_hint: Optional[str] = Form(None),
+    subject_default: Optional[str] = Form("Physics"),
+    raw_text: Optional[str] = Form(None),
+    use_ai: Optional[bool] = Form(True),
+    import_mode: str = Form("extract"),
+    answer_file: Optional[UploadFile] = File(None),
+    answer_text: Optional[str] = Form(None),
+    type_default: Optional[str] = Form(None),
+    difficulty_default: Optional[str] = Form(None),
+    status_default: Optional[str] = Form(None),
+    chapter_default: Optional[str] = Form(None),
+    topic_default: Optional[str] = Form(None),
+    section_default: Optional[str] = Form(None),
+    exam_default: Optional[str] = Form(None),
+    class_default: Optional[str] = Form(None),
+    year_default: Optional[str] = Form(None),
+    tags_default: Optional[str] = Form(None),
+    marks_default: Optional[float] = Form(None),
+    negative_default: Optional[float] = Form(None),
+    user: dict = Depends(require_role('admin')),
+):
+    """Kick off an import in the background and return a job id immediately.
+    The AI does the whole job server-side; the client polls /import/jobs/{id}."""
+    data, filename, ext, text = await _resolve_import_inputs(file, drive_url, file_type_hint, raw_text)
+    answer_data = None; answer_ext = ""
+    if answer_file is not None:
+        answer_data = await answer_file.read()
+        answer_ext = ((answer_file.filename or "").split(".")[-1] or "").lower()
+    job_id = new_id()
+    await db.import_jobs.insert_one({
+        "id": job_id, "status": "processing", "filename": filename,
+        "created_by": user["id"], "created_at": now_iso(), "result": None, "error": None})
+    kwargs = dict(
+        data=data, filename=filename, ext=ext, text=text, use_ai=bool(use_ai),
+        import_mode=import_mode, subject_default=subject_default or "Physics",
+        type_default=type_default, difficulty_default=difficulty_default, status_default=status_default,
+        chapter_default=chapter_default, topic_default=topic_default, section_default=section_default,
+        exam_default=exam_default, class_default=class_default, year_default=year_default,
+        tags_default=tags_default, marks_default=marks_default, negative_default=negative_default,
+        answer_data=answer_data, answer_ext=answer_ext, answer_text=answer_text)
+    asyncio.create_task(_run_import_job(job_id, kwargs))
+    return {"job_id": job_id, "filename": filename, "status": "processing"}
+
+
+@api.get("/import/jobs/{job_id}")
+async def import_job_status(job_id: str, user: dict = Depends(require_role('admin'))):
+    job = await db.import_jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(404, "Import job not found")
+    return job
+
 
 
 @api.post("/import/commit")
@@ -883,7 +967,6 @@ async def submit_attempt(inp: AttemptSubmitIn, request: Request, user: dict = De
     final = await db.attempts.find_one({"id": inp.attempt_id}, {"_id": 0})
     # Post-submit emails & alerts (fire-and-forget, never blocks submit).
     try:
-        import asyncio
         peers = await db.attempts.find({"test_id": a["test_id"], "status": "submitted"}, {"_id": 0, "score": 1}).to_list(5000)
         total_peers = len(peers)
         beat = sum(1 for s in peers if final.get("score", 0) > s.get("score", 0))
@@ -1446,7 +1529,6 @@ async def cron_weekly_digest(request: Request):
     # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
     if not _cron_authorized(request):
         raise HTTPException(401, "Unauthorized")
-    import asyncio
     asyncio.create_task(_run_weekly_digests())
     return {"ok": True, "status": "accepted"}
 
@@ -1476,7 +1558,6 @@ async def cron_study_reminder(request: Request):
     # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
     if not _cron_authorized(request):
         raise HTTPException(401, "Unauthorized")
-    import asyncio
     asyncio.create_task(_run_study_reminders())
     return {"ok": True, "status": "accepted"}
 

@@ -44,6 +44,10 @@ export const importApi = {
   parse: (formData) => api.post("/import/parse", formData, {
     headers: { "Content-Type": "multipart/form-data" }
   }).then((r) => r.data),
+  start: (formData) => api.post("/import/start", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  }).then((r) => r.data),
+  jobStatus: (jobId) => api.get(`/import/jobs/${jobId}`).then((r) => r.data),
   commit: (questions) => api.post("/import/commit", { questions }).then((r) => r.data),
   predictDifficulty: (texts) => api.post("/import/ai-difficulty", { texts }).then((r) => r.data),
 };

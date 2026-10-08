@@ -47,6 +47,26 @@ export default function ImportWizard() {
   const updCat = (k, v) => setCat((x) => ({ ...x, [k]: v }));
   const nav = useNavigate();
 
+  // Poll a background import job until it finishes. Keeps the HTTP requests short
+  // so the platform's 60s gateway timeout never fires on long AI extractions.
+  const pollImportJob = async (jobId) => {
+    const started = Date.now();
+    const TIMEOUT_MS = 10 * 60 * 1000; // 10 min ceiling
+    while (Date.now() - started < TIMEOUT_MS) {
+      await new Promise((res) => setTimeout(res, 2500));
+      let job;
+      try {
+        job = await importApi.jobStatus(jobId);
+      } catch (e) {
+        if (e?.response?.status === 404) continue; // not visible yet
+        throw e;
+      }
+      if (job.status === "done") return job.result;
+      if (job.status === "error") throw new Error(job.error || "Extraction failed");
+    }
+    throw new Error("Extraction timed out — try a smaller file or split the document.");
+  };
+
   const runParse = async () => {
     if (source === "file" && !file) return toast.error("Choose a file first");
     if (source === "drive" && !driveUrl) return toast.error("Enter a Google Drive URL");
@@ -75,7 +95,10 @@ export default function ImportWizard() {
       if (String(cat.negative_marks).trim() !== "") fd.append("negative_default", cat.negative_marks);
       fd.append("use_ai", "true");
       fd.append("import_mode", importMode);
-      const r = await importApi.parse(fd);
+      // Start the job in the background and poll — avoids the 60s gateway timeout
+      // on long AI extractions (big PDFs/DOCX). The AI does the whole job server-side.
+      const { job_id } = await importApi.start(fd);
+      const r = await pollImportJob(job_id);
       setParsed(r);
       setRows(r.questions.map((q) => ({ ...q, _include: true })));
       setStep(3);
