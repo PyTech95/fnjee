@@ -395,6 +395,42 @@ async def delete_question(qid: str, user: dict = Depends(require_role('admin')))
     return {"ok": True}
 
 
+@api.post("/questions/bulk-update")
+async def bulk_update_questions(payload: dict, user: dict = Depends(require_role('admin'))):
+    """Apply the same field changes to many questions at once.
+    Body: {ids: [...], patch: {chapter?, topic?, section?, difficulty?, status?, subject?,
+           marks?, negative_marks?, exam?, student_class?, year?}, add_tags?: [..]}"""
+    ids = payload.get("ids") or []
+    patch = payload.get("patch") or {}
+    add_tags = [t for t in (payload.get("add_tags") or []) if str(t).strip()]
+    if not ids:
+        raise HTTPException(400, "Select at least one question")
+    allowed = {"chapter", "topic", "section", "difficulty", "status", "subject",
+               "marks", "negative_marks", "exam", "student_class", "year", "type", "language"}
+    upd = {k: v for k, v in patch.items() if k in allowed and v not in (None, "")}
+    if not upd and not add_tags:
+        raise HTTPException(400, "Nothing to change")
+    modified = 0
+    if upd:
+        upd["updated_at"] = now_iso()
+        r = await db.questions.update_many({"id": {"$in": ids}}, {"$set": upd})
+        modified = r.modified_count
+    if add_tags:
+        r2 = await db.questions.update_many(
+            {"id": {"$in": ids}}, {"$addToSet": {"tags": {"$each": add_tags}}})
+        modified = max(modified, r2.modified_count)
+    return {"ok": True, "modified": modified, "requested": len(ids)}
+
+
+@api.post("/questions/bulk-delete")
+async def bulk_delete_questions(payload: dict, user: dict = Depends(require_role('admin'))):
+    ids = payload.get("ids") or []
+    if not ids:
+        raise HTTPException(400, "Select at least one question")
+    r = await db.questions.delete_many({"id": {"$in": ids}})
+    return {"ok": True, "deleted": r.deleted_count}
+
+
 async def _resolve_import_inputs(file, drive_url, file_type_hint, raw_text):
     """Normalise the three upload sources into (data, filename, ext, text)."""
     data: bytes = b""; filename = ""; text: str = ""; ext = ""
@@ -418,9 +454,14 @@ async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
                            exam_default=None, class_default=None, year_default=None,
                            tags_default=None, marks_default=None, negative_default=None,
                            answer_data: Optional[bytes] = None, answer_ext: str = "",
-                           answer_text: Optional[str] = None) -> dict:
+                           answer_text: Optional[str] = None, progress_cb=None) -> dict:
     """Heavy lifting for an import: AI/regex extraction, categorisation, answer-key, dedupe.
     Pure bytes in → result dict out, so it can run synchronously OR in a background job."""
+    async def _p(pct, msg):
+        if progress_cb:
+            try: await progress_cb(pct, msg)
+            except Exception: pass
+    await _p(5, "Reading file…")
     if import_mode not in ("extract", "adapt"):
         raise HTTPException(400, "Choose extract or adapt mode")
     if import_mode == "adapt" and ext != "pdf":
@@ -429,16 +470,20 @@ async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
     document_kind = "questions"
     try:
         if ext == "pdf" and use_ai:
-            parsed, errors, document_kind = await parse_visual_pdf(data, subject_default or "Physics", import_mode)
+            await _p(15, "AI is reading the PDF pages…")
+            parsed, errors, document_kind = await parse_visual_pdf(data, subject_default or "Physics", import_mode, progress_cb=progress_cb)
             used_ai = True
             if import_mode == "extract" and document_kind == "solutions" and not parsed:
                 log.info("solutions-only PDF detected in extract mode; auto-switching to adapt")
-                parsed, adapt_warns, document_kind = await parse_visual_pdf(data, subject_default or "Physics", "adapt")
+                await _p(55, "Solutions detected — generating practice questions…")
+                parsed, adapt_warns, document_kind = await parse_visual_pdf(data, subject_default or "Physics", "adapt", progress_cb=progress_cb)
                 errors = ["Auto-detected a solutions-only document — generated adapted practice questions (you can review/edit each below)."] + adapt_warns
         elif ext in ("xlsx", "xls"):
+            await _p(40, "Reading spreadsheet…")
             parsed, errors = parse_excel(data)
         else:
             if not text:
+                await _p(15, "Extracting text…")
                 if ext == "docx":
                     text = parse_docx(data)
                 elif ext == "pdf":
@@ -454,7 +499,8 @@ async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
                 errors.extend(warns)
                 used_regex = bool(parsed)
                 if len(parsed) < 3 and use_ai:
-                    ai_parsed, ai_errs = await ai_extract_questions(text, subject_default or "Physics")
+                    await _p(30, "AI is reading the questions…")
+                    ai_parsed, ai_errs = await ai_extract_questions(text, subject_default or "Physics", progress_cb=progress_cb)
                     errors.extend(ai_errs); used_ai = True
                     seen = {re.sub(r"\s+", " ", (q.get("text") or "").lower())[:120] for q in parsed}
                     for q in ai_parsed:
@@ -546,6 +592,7 @@ async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
         _noise = ("no numbered questions detected", "empty document", "no valid question blocks")
         errors = [e for e in errors if not any(n in (e or "").lower() for n in _noise)]
 
+    await _p(98, "Finalising…")
     return {"filename": filename, "file_type": ext, "used_ai": used_ai, "used_regex": used_regex,
             "count": len(parsed), "questions": parsed, "errors": errors, "document_kind": document_kind,
             "answer_key_applied": answer_key_applied}
@@ -557,10 +604,14 @@ _bg_tasks: set = set()
 
 async def _run_import_job(job_id: str, kwargs: dict):
     """Background worker: runs the heavy parse and stores the result on the job doc."""
-    try:
-        result = await _do_import_parse(**kwargs)
+    async def _progress(pct, msg):
         await db.import_jobs.update_one({"id": job_id},
-            {"$set": {"status": "done", "result": result, "finished_at": now_iso()}})
+            {"$set": {"progress": {"pct": int(pct), "msg": msg}}})
+    try:
+        result = await _do_import_parse(progress_cb=_progress, **kwargs)
+        await db.import_jobs.update_one({"id": job_id},
+            {"$set": {"status": "done", "result": result, "progress": {"pct": 100, "msg": "Done"},
+                      "finished_at": now_iso()}})
     except HTTPException as he:
         await db.import_jobs.update_one({"id": job_id},
             {"$set": {"status": "error", "error": he.detail, "finished_at": now_iso()}})
@@ -647,7 +698,8 @@ async def import_start(
     job_id = new_id()
     await db.import_jobs.insert_one({
         "id": job_id, "status": "processing", "filename": filename,
-        "created_by": user["id"], "created_at": now_iso(), "result": None, "error": None})
+        "created_by": user["id"], "created_at": now_iso(), "result": None, "error": None,
+        "progress": {"pct": 2, "msg": "Queued…"}})
     kwargs = dict(
         data=data, filename=filename, ext=ext, text=text, use_ai=bool(use_ai),
         import_mode=import_mode, subject_default=subject_default or "Physics",

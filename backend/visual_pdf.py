@@ -72,7 +72,11 @@ def crop_image(doc, crop):
         return None
 
 
-async def parse_visual_pdf(data, subject="Biology", mode="extract"):
+async def parse_visual_pdf(data, subject="Biology", mode="extract", progress_cb=None):
+    async def _p(pct, msg):
+        if progress_cb:
+            try: await progress_cb(pct, msg)
+            except Exception: pass
     if len(data) > 25*1024*1024:
         raise ValueError("PDF must be smaller than 25 MB.")
     with pymupdf.open(stream=data, filetype="pdf") as doc:
@@ -106,8 +110,10 @@ async def parse_visual_pdf(data, subject="Biology", mode="extract"):
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(data); path = f.name
             async with _lock:
+                await _p(25 if mode == "extract" else 60, f"AI is reading {len(doc)} page(s)…")
                 async with asyncio.timeout(240):
                     out = await ai_complete(SYSTEM, instruction, file_paths=[path], max_tokens=32768)
+                await _p(90, "Structuring questions…")
                 raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", out.strip())
                 try:
                     result = json.loads(raw)
