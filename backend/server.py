@@ -14,7 +14,8 @@ import os, uuid, logging, jwt, bcrypt, random, string, re, traceback, asyncio
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-from parsers import parse_excel, parse_docx, parse_pdf, parse_pagemaker, download_google_drive
+from parsers import (parse_excel, parse_docx, parse_pdf, parse_pagemaker,
+                     download_google_drive, extract_text_any, image_to_pdf, IMAGE_EXTS)
 from ai_parser import ai_extract_questions, ai_predict_difficulty, ai_generate_quiz
 from visual_pdf import parse_visual_pdf
 from regex_extractor import regex_extract_questions
@@ -462,55 +463,86 @@ async def _do_import_parse(*, data: bytes, filename: str, ext: str, text: str,
             try: await progress_cb(pct, msg)
             except Exception: pass
     await _p(5, "Reading file…")
+    subject = subject_default or "Physics"
+    # Never hard-fail on mode: default anything odd to a safe extract.
     if import_mode not in ("extract", "adapt"):
-        raise HTTPException(400, "Choose extract or adapt mode")
-    if import_mode == "adapt" and ext != "pdf":
-        raise HTTPException(400, "Adapted practice currently supports PDF files. Choose 'Extract original questions' for other formats.")
+        import_mode = "extract"
+    adapt_requested = (import_mode == "adapt")
     parsed: List[dict] = []; errors: List[str] = []; used_ai = False; used_regex = False
     document_kind = "questions"
+
+    def _sig(q): return re.sub(r"\s+", " ", (q.get("text") or "").lower())[:120]
+
+    def _merge(into, extra):
+        seen = {_sig(q) for q in into}
+        for q in extra:
+            s = _sig(q)
+            if s and s not in seen:
+                seen.add(s); into.append(q)
+
+    is_image = ext in IMAGE_EXTS
+    is_spreadsheet = ext in ("xlsx", "xls")
+
+    # ---------------- STEP 1: CODE-FIRST (deterministic, fast, free) ----------------
     try:
-        if ext == "pdf" and use_ai:
-            await _p(15, "AI is reading the PDF pages…")
-            parsed, errors, document_kind = await parse_visual_pdf(data, subject_default or "Physics", import_mode, progress_cb=progress_cb)
-            used_ai = True
-            if import_mode == "extract" and document_kind == "solutions" and not parsed:
-                log.info("solutions-only PDF detected in extract mode; auto-switching to adapt")
-                await _p(55, "Solutions detected — generating practice questions…")
-                parsed, adapt_warns, document_kind = await parse_visual_pdf(data, subject_default or "Physics", "adapt", progress_cb=progress_cb)
-                errors = ["Auto-detected a solutions-only document — generated adapted practice questions (you can review/edit each below)."] + adapt_warns
-        elif ext in ("xlsx", "xls"):
+        if is_spreadsheet:
             await _p(40, "Reading spreadsheet…")
-            parsed, errors = parse_excel(data)
-        else:
+            parsed, warns = parse_excel(data)
+            errors.extend(warns); used_regex = bool(parsed)
+        elif not is_image:
             if not text:
                 await _p(15, "Extracting text…")
-                if ext == "docx":
-                    text = parse_docx(data)
-                elif ext == "pdf":
-                    text = parse_pdf(data)
-                elif ext in ("pmd", "p65", "pm6", "pm7"):
-                    text = parse_pagemaker(data)
-                else:
-                    try: text = data.decode("utf-8", errors="ignore")
-                    except Exception: text = ""
-
+                text = extract_text_any(data, ext)
             if text and len(text) >= 30:
-                parsed, warns = regex_extract_questions(text, subject_default or "Physics")
-                errors.extend(warns)
-                used_regex = bool(parsed)
-                if len(parsed) < 3 and use_ai:
-                    await _p(30, "AI is reading the questions…")
-                    ai_parsed, ai_errs = await ai_extract_questions(text, subject_default or "Physics", progress_cb=progress_cb)
-                    errors.extend(ai_errs); used_ai = True
-                    seen = {re.sub(r"\s+", " ", (q.get("text") or "").lower())[:120] for q in parsed}
-                    for q in ai_parsed:
-                        sig = re.sub(r"\s+", " ", (q.get("text") or "").lower())[:120]
-                        if sig and sig not in seen:
-                            seen.add(sig); parsed.append(q)
-            elif ext:
-                errors.append(f"Could not extract text from .{ext} file.")
+                await _p(22, "Scanning for questions…")
+                parsed, warns = regex_extract_questions(text, subject)
+                errors.extend(warns); used_regex = bool(parsed)
     except Exception as e:
-        log.exception("parse fail"); errors.append(f"Parse error: {e}")
+        log.warning(f"code parse step failed softly: {e}")
+
+    # ---------------- STEP 2: AI FALLBACK (only when code came up short) ----------------
+    # The rule the user asked for: code first; if code can't do the job, AI converts
+    # the file into questions. Images/scanned PDFs always need AI vision.
+    need_ai = use_ai and (is_image or adapt_requested or len(parsed) < 3)
+    if need_ai:
+        try:
+            if ext == "pdf":
+                await _p(30, "Code parse was thin — AI is reading the PDF…")
+                ai_parsed, ai_errs, document_kind = await parse_visual_pdf(data, subject, import_mode, progress_cb=progress_cb)
+                if import_mode == "extract" and document_kind == "solutions" and not ai_parsed:
+                    await _p(55, "Solutions detected — generating practice questions…")
+                    ai_parsed, adapt_warns, document_kind = await parse_visual_pdf(data, subject, "adapt", progress_cb=progress_cb)
+                    ai_errs = ["Auto-detected a solutions-only document — generated adapted practice questions (you can review/edit each below)."] + adapt_warns
+                used_ai = True
+                _merge(parsed, [q for q in ai_parsed if isinstance(q, dict)])
+                errors.extend(ai_errs)
+            elif is_image:
+                await _p(30, "AI is reading the image…")
+                try:
+                    pdf_bytes = image_to_pdf(data)
+                except Exception as e:
+                    pdf_bytes = None
+                    errors.append(f"Could not read this image: {e}")
+                if pdf_bytes:
+                    mode = "adapt" if adapt_requested else "extract"
+                    ai_parsed, ai_errs, document_kind = await parse_visual_pdf(pdf_bytes, subject, mode, progress_cb=progress_cb)
+                    used_ai = True
+                    _merge(parsed, [q for q in ai_parsed if isinstance(q, dict)])
+                    errors.extend(ai_errs)
+            elif text and len(text.strip()) >= 20:
+                await _p(30, "AI is converting the file into questions…")
+                ai_parsed, ai_errs = await ai_extract_questions(text, subject, progress_cb=progress_cb)
+                used_ai = True
+                _merge(parsed, [q for q in ai_parsed if isinstance(q, dict)])
+                errors.extend(ai_errs)
+            elif not is_spreadsheet and not parsed:
+                errors.append("We couldn't read any text from this file. Please upload a PDF, Word (.docx), PowerPoint (.pptx), image, or Excel file, or paste the questions as text.")
+        except Exception as e:
+            log.exception("AI fallback failed softly")
+            errors.append(f"AI could not process this file automatically: {e}")
+
+    if adapt_requested and ext != "pdf" and not is_image:
+        errors.append("Note: 'Create adapted practice' uses AI vision and works on PDFs/images. This file was processed as a normal extract instead.")
 
     # ---- Batch categorisation: apply admin-chosen defaults to every question ----
     _overrides: dict = {}

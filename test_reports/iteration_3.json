@@ -1,0 +1,23 @@
+{
+  "summary": "Backend-only verification of (a) app-side 413 behaviour on /api/import/start for 1/5/12/25 MB uploads, (b) DOCX + solutions-PDF async import regression after progress-callback plumbing changes, (c) live progress object on GET /api/import/jobs/{id}, (d) new /api/questions/bulk-update and /api/questions/bulk-delete endpoints, and (e) admin login requiring role. 10/10 pytest cases passing in 207s. The FastAPI app imposes NO small upload cap — all four large uploads returned HTTP 200 with job_id (not 413/400), confirming the 413 reported on VPS is purely external nginx reverse-proxy config (fixed via /app/frontend/Caddyfile request_body max_size 60MB and /app/deploy/nginx-fnjee.conf client_max_body_size 60m — those files are config and not retestable in preview).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_413_bulk_and_progress.py",
+    "/app/test_reports/pytest/iter3_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "No GET /api/questions/{qid} route exists — only list / POST / PUT / PATCH / DELETE. Not a bug for this request but worth exposing for parity (bulk-update verification had to go through the list endpoint with filters). Carryover note.",
+    "import_jobs collection still has no TTL cleanup (carryover from iteration_1/2).",
+    "server.py still ~3588 lines — split into routers (carryover)."
+  ],
+  "updated_files": ["/app/backend/tests/test_413_bulk_and_progress.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "n/a (not in scope)"},
+  "test_credentials": "admin@examnest.io / Admin@123 / role=admin (role field is required by /api/auth/login).",
+  "seed_data_creation": "test_bulk_update_questions & test_bulk_delete_questions each create 2 throwaway Chemistry questions (text prefix 'TEST_bulk Q ...'); both tests clean up at the end via /questions/bulk-delete so no residue remains in the questions collection.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Reusable regression file: /app/backend/tests/test_413_bulk_and_progress.py (10 cases, ~3.5 min). Covers 413-size matrix (1/5/12/25 MB), DOCX extract >=60, solutions-PDF extract>0 (with JSON-escape sanitiser working), live progress (distinct pct snapshots + reaches 100), bulk-update (verified via list filter chapter=TEST_CHAP), bulk-delete (verified gone from list), admin login role requirement. Use pytest -n 0 (pytest.ini pins -n 2 which multiplies AI calls). AI import jobs take 45-130s so timeout_s=200 in _poll is tuned accordingly.",
+  "rca of the issue": "Original VPS 413: nginx default client_max_body_size=1MB on the user's reverse proxy. App layer verified immune (25MB file: HTTP 200 in <2s). Fix is config-only: /app/frontend/Caddyfile adds `request_body { max_size 60MB }` under /api/*; /app/deploy/nginx-fnjee.conf sets client_max_body_size 60m; DEPLOY_VPS.md documents the admin step. Not reproducible in preview — only the app-side immunity is testable, and it passes."
+}

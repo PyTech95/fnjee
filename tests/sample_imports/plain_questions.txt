@@ -1,0 +1,13 @@
+1. What is the SI unit of force?
+a) Joule
+b) Newton
+c) Watt
+d) Pascal
+Answer: b
+
+2. Speed of light is approximately?
+a) 3x10^8 m/s
+b) 3x10^6 m/s
+c) 3x10^5 m/s
+d) 3x10^10 m/s
+Answer: a

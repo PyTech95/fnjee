@@ -221,3 +221,81 @@ async def download_google_drive(url: str) -> Tuple[bytes, str]:
         cd = r.headers.get("content-disposition", "")
         fname = re.search(r'filename="?([^"]+)"?', cd)
         return r.content, (fname.group(1) if fname else f"drive_{file_id}")
+
+
+
+IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif", "bmp", "tif", "tiff", "heic", "heif"}
+
+
+def parse_pptx(data: bytes) -> str:
+    """Extract all text from a PowerPoint (.pptx)."""
+    from pptx import Presentation
+    prs = Presentation(io.BytesIO(data))
+    out = []
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                for para in shape.text_frame.paragraphs:
+                    line = "".join(run.text for run in para.runs).strip()
+                    if line:
+                        out.append(line)
+            if shape.has_table:
+                for row in shape.table.rows:
+                    cells = [c.text.strip() for c in row.cells]
+                    if any(cells):
+                        out.append(" | ".join(cells))
+    return "\n".join(out)[:120000]
+
+
+def parse_markup(data: bytes) -> str:
+    """Best-effort text from HTML / CSV / RTF / plain text without extra deps."""
+    try:
+        raw = data.decode("utf-8", errors="ignore")
+    except Exception:
+        raw = data.decode("latin-1", errors="ignore")
+    # strip RTF control words
+    if raw.lstrip().startswith("{\\rtf"):
+        raw = re.sub(r"\\[a-zA-Z]+-?\d* ?", " ", raw)
+        raw = raw.replace("{", " ").replace("}", " ")
+    # strip HTML tags
+    raw = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", raw)
+    raw = re.sub(r"(?s)<[^>]+>", " ", raw)
+    # CSV: turn commas/tabs into spaces so regex sees readable lines
+    raw = raw.replace("\t", " ")
+    raw = re.sub(r"[ \u00a0]{2,}", " ", raw)
+    lines = [ln.strip() for ln in raw.splitlines()]
+    return "\n".join(ln for ln in lines if ln)[:120000]
+
+
+def image_to_pdf(data: bytes) -> bytes:
+    """Wrap an image (jpg/png/webp/…) into a single-page PDF so the visual-AI
+    pipeline (built for PDFs) can read a photographed/scanned question paper."""
+    import pymupdf
+    doc = pymupdf.open(stream=data, filetype=None)  # auto-detect image type
+    try:
+        pdf_bytes = doc.convert_to_pdf()
+    finally:
+        doc.close()
+    return pdf_bytes
+
+
+def extract_text_any(data: bytes, ext: str) -> str:
+    """Deterministic (code) text extraction for any supported text-based format.
+    Returns '' when the format is not text-extractable (e.g. images)."""
+    ext = (ext or "").lower()
+    try:
+        if ext == "docx":
+            return parse_docx(data)
+        if ext == "pdf":
+            return parse_pdf(data)
+        if ext == "pptx":
+            return parse_pptx(data)
+        if ext in ("pmd", "p65", "pm6", "pm7"):
+            return parse_pagemaker(data)
+        if ext in ("html", "htm", "csv", "rtf", "txt", "md", "tsv", ""):
+            return parse_markup(data)
+        # unknown extension: last-ditch decode attempt
+        return parse_markup(data)
+    except Exception as e:
+        log.warning(f"text extract failed for .{ext}: {e}")
+        return ""

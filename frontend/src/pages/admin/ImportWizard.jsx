@@ -18,6 +18,9 @@ const FORMATS = [
   { icon: FileSpreadsheet, name: "Excel", exts: ".xlsx,.xls" },
   { icon: FileText, name: "Word", exts: ".docx" },
   { icon: FileImage, name: "PDF", exts: ".pdf" },
+  { icon: FileImage, name: "Image / Scan", exts: ".jpg,.png,.webp" },
+  { icon: FileText, name: "PowerPoint", exts: ".pptx" },
+  { icon: FileText, name: "Text / CSV / HTML", exts: ".txt,.csv,.html,.rtf" },
   { icon: FileText, name: "PageMaker", exts: ".pmd,.p65,.pm6,.pm7" },
   { icon: CloudDownload, name: "Google Drive", exts: "url" },
   { icon: ClipboardPaste, name: "Paste text", exts: "textarea" },
@@ -201,7 +204,7 @@ export default function ImportWizard() {
                 <div className="mt-3 font-medium">{file ? file.name : "Click to choose a file"}</div>
                 <div className="text-xs text-muted-foreground mt-1">Excel · Word · PDF · PageMaker</div>
                 <input data-testid="file-input" id="file-input" type="file" className="hidden"
-                  accept=".xlsx,.xls,.docx,.pdf,.pmd,.p65,.pm6,.pm7,.txt"
+                  accept=".xlsx,.xls,.docx,.pdf,.pptx,.pmd,.p65,.pm6,.pm7,.txt,.csv,.tsv,.rtf,.md,.html,.htm,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif"
                   onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </label>
             </TabsContent>
