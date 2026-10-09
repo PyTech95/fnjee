@@ -1,0 +1,24 @@
+{
+  "summary": "Backend-only verification of the NEVER-ERROR guarantee for /api/import/start + /api/import/jobs/{id}. Added /app/backend/tests/test_import_never_error.py (8 cases, 192s). ALL PASS. Each file type was uploaded via multipart POST /api/import/start with subject_default=Chemistry and polled on GET /api/import/jobs/{job_id} until status='done'. No start call returned 4xx/5xx; no job ended in status='error'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_import_never_error.py",
+    "/app/test_reports/pytest/iter4_never_error.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now ~3620 lines — split into routers (carryover from iter 1/2/3).",
+    "import_jobs collection still has no TTL cleanup (carryover).",
+    "_do_import_parse swallows all step-1/step-2 exceptions into result.errors as designed — good UX but makes operational debugging harder; consider also logging exception() at WARN so bad files still appear in backend logs for admins (currently only step-1 and the AI block log).",
+    "No GET /api/questions/{qid} route exists (carryover)."
+  ],
+  "updated_files": ["/app/backend/tests/test_import_never_error.py"],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "n/a (not in scope)"},
+  "test_credentials": "admin@examnest.io / Admin@123 / role=admin (role field is required on /api/auth/login).",
+  "seed_data_creation": "None. Tests only hit import/start+jobs (no commit), so no questions were persisted to the DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Reusable regression: /app/backend/tests/test_import_never_error.py — pytest -n 0 (pytest.ini pins -n 2 which multiplies AI calls); runs ~3-4 min. Covers: TXT regex (count>=2, used_regex=true), PPTX code+AI (count>=2), PNG AI vision (count>=1, used_ai=true, used_regex=false), DOCX AI (count>=60), Solutions PDF (count>0, auto adapts), garbage weird.xyz random 2KB (status=done, count=0, friendly errors with no traceback/500), 20MB PDF-header upload (HTTP 200 not 413), login requires role. Sample files are stable under /app/tests/sample_imports/.",
+  "rca of the issue": "N/A — the never-error pipeline works end to end. _do_import_parse's two-step design (deterministic code first, AI fallback) with all heavy work wrapped in try/except and errors appended to result.errors is working as spec. Even a 2KB random bytes 'weird.xyz' upload completes with status='done', count=0, job.error=null, and a friendly 'We couldn't read any text from this file…' message in result.errors — no stack trace, no 500."
+}
