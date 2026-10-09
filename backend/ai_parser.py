@@ -159,7 +159,7 @@ async def _extract_one(chat_cls, user_msg_cls, chunk: str, subject_hint: str, ke
     return [], ["AI returned non-JSON output"]
 
 
-async def ai_extract_questions(text: str, subject_hint: str = "Physics") -> Tuple[list, list]:
+async def ai_extract_questions(text: str, subject_hint: str = "Physics", progress_cb=None) -> Tuple[list, list]:
     """Extract structured questions. Chunks long text + parallel Gemini calls."""
     errors: list = []
     key = _get_key()
@@ -174,10 +174,19 @@ async def ai_extract_questions(text: str, subject_hint: str = "Physics") -> Tupl
 
     # bounded parallelism
     sem = asyncio.Semaphore(MAX_PARALLEL)
+    total = len(chunks); done = 0
 
     async def _run(chunk_text):
+        nonlocal done
         async with sem:
-            return await _extract_one(None, None, chunk_text, subject_hint, key)
+            res = await _extract_one(None, None, chunk_text, subject_hint, key)
+        done += 1
+        if progress_cb:
+            # Map chunk completion onto the 35-90% band of the overall bar.
+            pct = 35 + int(55 * done / max(1, total))
+            try: await progress_cb(pct, f"AI reading section {done} of {total}…")
+            except Exception: pass
+        return res
 
     results = await asyncio.gather(*[_run(c) for c in chunks], return_exceptions=True)
 

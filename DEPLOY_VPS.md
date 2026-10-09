@@ -70,3 +70,31 @@ Take a manual backup before a risky update: `docker compose exec backup sh -c 'm
 | Cron | platform `.emergent/crons.yml` | built-in scheduler |
 | HTTPS | platform | Caddy (Let's Encrypt, automatic) |
 | DB | platform Mongo | Mongo container with auth + daily backups |
+
+## Troubleshooting: HTTP 413 when importing Word/PDF files
+
+**Symptom:** uploading a question paper in Admin → Import fails with `413 Request Entity Too Large`.
+
+**Cause:** a reverse proxy in front of the app is rejecting the upload because its
+default body-size limit is tiny. The FastAPI app itself accepts up to 25 MB, and
+the bundled Caddy now allows 60 MB — so a 413 means something is in front of them.
+
+**Fix by setup:**
+
+- **Using the bundled Caddy (docker-compose):** already fixed — the Caddyfile sets
+  `request_body { max_size 60MB }` in the `/api/*` handler. Just redeploy:
+  `docker compose up -d --build web`
+
+- **You put nginx in front (common on Hostinger):** nginx defaults to 1 MB. Add this
+  to your server block and reload nginx:
+  ```nginx
+  client_max_body_size 60m;
+  proxy_read_timeout 300s;
+  proxy_request_buffering off;
+  ```
+  A ready example is in `deploy/nginx-fnjee.conf`. Then: `sudo nginx -t && sudo systemctl reload nginx`
+
+- **Behind Cloudflare:** the Free plan caps uploads at 100 MB (Pro 100 MB). Question
+  files are far smaller, so Cloudflare is rarely the cause — check nginx first.
+
+**Verify:** `curl -s -o /dev/null -w "%{http_code}\n" -X POST https://your-domain/api/import/start -H "Authorization: Bearer <admin-token>" -F "file=@big.pdf"` should return `200`, not `413`.
